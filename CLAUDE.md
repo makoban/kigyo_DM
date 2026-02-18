@@ -134,6 +134,50 @@
 - 東京23特別区: 23件
 - **合計: 1,741市区町村 + 47都道府県 = 全自治体対応**
 
+**バグ修正: 東京都の区名表示（"東京都名古屋市港区" 問題）:**
+- 原因: ward（区）の親市名検索で `||cities[0]` というフォールバックがあり、東京23区のように政令指定都市に属さない特別区で、リスト先頭の都市名（名古屋市）が誤表示されていた
+- 修正: `||cities[0]` を削除。親市が見つからない場合はundefinedとし、区名のみを表示
+- 結果: 「東京都 港区」と正しく表示されるようになった（名古屋市港区は「愛知県 名古屋市港区」と正しく区別）
+
+**A4レポート: 比較表への刷新:**
+- 業界別事業所構成の単一棒グラフ → 4列比較表（対象地域 vs 近隣 vs 都道府県 vs 全国）に変更
+- 消費支出内訳の単一棒グラフ → 同様の4列比較表に変更
+- CSSクラス `.rp-comp` で比較表スタイリング
+- ハイライト: `.hi`（ゴールド・最大値）、`.lo`（グレー・最小値）
+- AI分析コメントも比較データに基づく内容に更新
+
+**フッターに会社情報追加:**
+- 〒468-0015 愛知県名古屋市天白区原3丁目304番1号
+- 株式会社バンテックス
+
+**GitHub Pages デプロイ:**
+- リポジトリ: `makoban/kigyo_DM`
+- カスタムドメイン: `kigyo-dm.bantex.jp`
+- CNAMEファイル作成（内容: kigyo-dm.bantex.jp）
+- DNS設定（ユーザー側）: `kigyo-dm.bantex.jp` → CNAME → `makoban.github.io.` TTL:10800
+- GitHub Pages有効化（mainブランチ / root）
+- HTTPS: DNS伝播後に手動で有効化が必要（Settings → Pages → Enforce HTTPS）
+
+**レスポンシブ対応の全面改修:**
+- `body` に `word-break:keep-all;overflow-wrap:break-word` を追加（日本語テキストの途中改行を防止）
+- `.bp` クラス: PC用 `<br>` タグ。768px以下で `display:none` に切り替え（文が途中で改行しないように制御）
+- `.table-scroll` クラス: テーブルの横スクロール防止ラッパー（`overflow-x:auto`）
+- 比較表（`.compare-table`）を `.table-scroll` で囲み、スマホでもテーブルが溢れない処理
+- **768pxブレークポイント:**
+  - ナビリンクを非表示（`.nav-links{display:none}`）
+  - ヒーロー: タイトル 1.5rem、リード 0.85rem、メトリクス grid-template-columns:repeat(2,1fr)
+  - シミュレーション結果: グリッドを2列→2列にリフロー
+  - カードグリッド系（3列→1列）: `.step-grid`, `.why-grid`, `.voice-grid`
+  - 料金カード: `max-width:100%`
+  - セクション全体: padding 60px→40px、タイトル 1.5rem、リード 0.82rem
+  - 比較表セルの padding/font-size 縮小
+- **480pxブレークポイント:**
+  - container padding: 16px
+  - ヒーロー: タイトル 1.2rem、リード 0.78rem、badge 0.56rem
+  - セクション padding: 40px→32px
+  - シミュレーション結果: 1列表示
+  - 比較表セルのさらなる縮小
+
 **今後の課題・TODO（未着手）:**
 - [ ] お問い合わせフォームの実装（現在は mailto リンクのみ）
 - [ ] 実際のお客様の声への差し替え（現在はサンプルテキスト）
@@ -141,7 +185,8 @@
 - [ ] OGP（SNSシェア用）メタタグの追加
 - [ ] Google Analytics 等のアクセス解析タグの設置
 - [ ] ファビコンの設定
-- [ ] 独自ドメインでのホスティング・公開
+- [x] 独自ドメインでのホスティング・公開（GitHub Pages + kigyo-dm.bantex.jp）
+- [ ] HTTPS強制（DNS伝播後にGitHub Pagesで有効化）
 - [ ] e-Stat リアルAPI接続（現在はJSに内包した参考データ）
 - [ ] モバイルメニュー（ハンバーガー）の実装
 
@@ -152,6 +197,7 @@
 ```
 DM自動集客/
 ├── index.html      ... LPページ（メインファイル）
+├── CNAME           ... GitHub Pagesカスタムドメイン設定（kigyo-dm.bantex.jp）
 └── CLAUDE.md       ... このファイル（開発履歴・引き継ぎメモ）
 ```
 

@@ -19,7 +19,7 @@
       --radius-sm:8px;--radius-md:12px;--radius-lg:20px;
     }
     html{scroll-behavior:smooth;font-size:16px}
-    body{font-family:var(--font-sans);color:var(--gray-700);background:var(--white);line-height:1.8;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+    body{font-family:var(--font-sans);color:var(--gray-700);background:var(--white);line-height:1.8;overflow-x:hidden;-webkit-font-smoothing:antialiased;word-break:keep-all;overflow-wrap:break-word}
     img{max-width:100%;height:auto}a{text-decoration:none;color:inherit}
 
     .container{max-width:1040px;margin:0 auto;padding:0 28px}
@@ -228,12 +228,6 @@
     .sim-features{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:24px}
     .sim-feat-tag{font-size:.7rem;font-weight:500;color:var(--gray-600);background:var(--gray-100);border:1px solid var(--gray-200);padding:6px 16px;border-radius:50px;letter-spacing:.04em}
 
-    @media(max-width:768px){
-      .report-wrap{flex-direction:column;align-items:center}
-      .report-preview-wrap{flex:none;width:100%;max-width:400px}
-      .report-desc{text-align:center}
-    }
-
     /* === なぜ選ばれるか === */
     .why{background:var(--gray-50)}
     .why-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--gray-200);border:1px solid var(--gray-200);border-radius:var(--radius-md);overflow:hidden;max-width:760px;margin:0 auto}
@@ -299,23 +293,102 @@
 
     footer{background:var(--navy-900);color:rgba(255,255,255,.25);text-align:center;padding:28px 0;font-size:.7rem;letter-spacing:.06em}
 
-    /* === レスポンシブ === */
+    /* === PC専用改行・テーブルラッパー === */
+    .bp{}
+    .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px;padding:0 4px}
+
+    /* === レスポンシブ 768px === */
     @media(max-width:768px){
+      .bp{display:none}
+      .container{padding:0 20px}
       .nav-links{display:none}
-      .hero h1{font-size:1.7rem}.hero-metrics{gap:24px}.hero-metric .value{font-size:1.8rem}
-      .section{padding:72px 0}.section-title{font-size:1.45rem}
-      .pain-grid,.why-grid{grid-template-columns:1fr}.voice-grid{grid-template-columns:1fr}
-      .sim-card{padding:32px 24px}
+      /* ヒーロー */
+      .hero-content{padding:100px 20px 60px}
+      .hero-badge{font-size:.62rem;padding:6px 16px;letter-spacing:.08em}
+      .hero h1{font-size:1.5rem;line-height:1.8}
+      .hero-sub{font-size:.85rem}
+      .hero-metrics{gap:20px}
+      .hero-metric .value{font-size:1.7rem}
+      /* セクション共通 */
+      .section{padding:64px 0}
+      .section-title{font-size:1.35rem;line-height:1.7}
+      .section-lead{font-size:.85rem;margin-bottom:32px}
+      /* シミュレーション */
+      .sim-card{padding:28px 20px}
       .sim-main-metrics{grid-template-columns:1fr}
       .sim-sub-metrics{grid-template-columns:1fr}
-      .step-items::before{left:23px}.step-number{width:48px;height:48px}.step-number .num{font-size:1.1rem}.step-item{gap:20px}
-      .compare-table th,.compare-table td{padding:14px 10px;font-size:.75rem}
-      .final-cta h2{font-size:1.35rem}
+      .sim-bar-label{width:76px;font-size:.7rem}
+      .sim-bar-value{width:48px;font-size:.7rem}
+      .sim-budget-row{flex-direction:column;gap:8px}
+      .sim-features{gap:8px}
+      .sim-feat-tag{font-size:.65rem;padding:5px 12px}
+      .sim-note{font-size:.65rem}
+      /* お悩み・解決策 */
+      .pain-grid,.why-grid{grid-template-columns:1fr}
+      .pain-item{padding:20px 24px}
+      .pain-item p{font-size:.85rem}
+      .solution-content p{font-size:.9rem;line-height:2.2}
+      .solution-highlight{font-size:1.2rem}
+      /* 3ステップ */
+      .step-items::before{left:23px}
+      .step-number{width:48px;height:48px;font-size:.45rem}
+      .step-number .num{font-size:1.1rem}
+      .step-item{gap:16px}
+      .step-content h3{font-size:1rem}
+      .step-content p{font-size:.82rem}
+      /* レポートサンプル */
+      .report-wrap{flex-direction:column;align-items:center}
+      .report-preview-wrap{flex:none;width:100%;max-width:380px}
+      .report-desc{text-align:center}
+      .report-desc h3{font-size:1rem}
+      .report-desc p{font-size:.82rem}
+      .report-desc-features li{font-size:.78rem;justify-content:center}
+      /* なぜ・料金 */
+      .why-card{padding:28px 24px}
+      .why-card h3{font-size:.95rem}
+      .why-card p{font-size:.82rem}
+      .pricing-amount .num{font-size:2.8rem}
+      /* 比較表 */
+      .compare-table th,.compare-table td{padding:12px 8px;font-size:.72rem}
+      /* お客様の声 */
+      .voice-grid{grid-template-columns:1fr}
+      .voice-card{padding:24px 20px}
+      .voice-card p{font-size:.82rem}
+      /* FAQ */
+      .faq-q{font-size:.85rem;padding:20px 0}
+      .faq-a .inner{font-size:.82rem;padding-left:36px}
+      /* 最終CTA・フッター */
+      .final-cta{padding:72px 0}
+      .final-cta h2{font-size:1.3rem}
+      .final-cta p{font-size:.82rem}
+      footer{font-size:.65rem}
+      footer p{line-height:1.8}
     }
+
+    /* === レスポンシブ 480px === */
     @media(max-width:480px){
-      .hero h1{font-size:1.4rem}.hero-metrics{flex-direction:column;gap:16px}.hero-divider{width:40px;height:1px}
+      .container{padding:0 16px}
+      .hero-content{padding:90px 16px 48px}
+      .hero-badge{font-size:.55rem;padding:5px 12px;letter-spacing:.06em}
+      .hero h1{font-size:1.2rem;line-height:1.9}
+      .hero-sub{font-size:.78rem}
+      .hero-metrics{flex-direction:column;gap:12px}
+      .hero-divider{width:40px;height:1px}
+      .hero-metric .value{font-size:1.5rem}
       .hero-actions{flex-direction:column}
-      .btn-primary,.btn-outline,.btn-gold,.btn-dark{width:100%;text-align:center}
+      .btn-primary,.btn-outline,.btn-gold,.btn-dark{width:100%;text-align:center;padding:14px 20px;font-size:.8rem}
+      .section-title{font-size:1.15rem}
+      .section-label{font-size:.6rem}
+      .section-label::before,.section-label::after{width:12px;margin:0 8px}
+      .section-lead{font-size:.8rem}
+      .sim-main-metric .metric-value{font-size:1.8rem}
+      .sim-bar-label{width:64px;font-size:.65rem}
+      .solution-content p{font-size:.85rem;line-height:2}
+      .solution-highlight{font-size:1.05rem}
+      .step-content p{font-size:.78rem}
+      .pricing-amount .num{font-size:2.2rem}
+      .compare-table th,.compare-table td{padding:10px 6px;font-size:.65rem}
+      .final-cta h2{font-size:1.15rem}
     }
 
     .fade-in{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
@@ -467,12 +540,12 @@
       <h2 class="section-title">そのお悩み、<em>すべて解決</em>できます。</h2>
       <div class="solution-content">
         <p>
-          「起業サーチDM営業サービス」は、<br>
-          税理士・社労士・コンサル事業者のために生まれた<br>
+          「起業サーチDM営業サービス」は、<br class="bp">
+          税理士・社労士・コンサル事業者のために生まれた<br class="bp">
           <strong>まったく新しい全自動の新規開拓ツール</strong>です。<br><br>
-          届くのは営業チラシではありません。<br>
-          社長が<strong>「これは欲しい」</strong>と思う<br>
-          <strong>地域のマーケティングデータレポート</strong>。<br>
+          届くのは営業チラシではありません。<br class="bp">
+          社長が<strong>「これは欲しい」</strong>と思う<br class="bp">
+          <strong>地域のマーケティングデータレポート</strong>。<br class="bp">
           だから、捨てられずにちゃんと読まれます。
         </p>
         <span class="solution-highlight">設定したら、あとは待つだけ。</span>
@@ -673,6 +746,7 @@
       <span class="section-label">Compare</span>
       <h2 class="section-title">他の営業手段と<em>くらべてみてください</em></h2>
       <p class="section-lead">同じ予算でも、効果はまったく異なります。</p>
+      <div class="table-scroll">
       <table class="compare-table">
         <thead><tr><th></th><th>従来のDM</th><th>営業スタッフ</th><th>起業サーチDM</th></tr></thead>
         <tbody>
@@ -682,6 +756,7 @@
           <tr><td>月額コスト目安</td><td>数万〜十数万円</td><td>20万円以上</td><td>数万円〜</td></tr>
         </tbody>
       </table>
+      </div>
     </div>
   </section>
 
