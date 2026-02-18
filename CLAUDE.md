@@ -158,25 +158,35 @@
 - GitHub Pages有効化（mainブランチ / root）
 - HTTPS: DNS伝播後に手動で有効化が必要（Settings → Pages → Enforce HTTPS）
 
-**レスポンシブ対応の全面改修:**
-- `body` に `word-break:keep-all;overflow-wrap:break-word` を追加（日本語テキストの途中改行を防止）
-- `.bp` クラス: PC用 `<br>` タグ。768px以下で `display:none` に切り替え（文が途中で改行しないように制御）
+**レスポンシブ対応の全面改修（3回の修正を経て完成）:**
+
+初期実装で `word-break:keep-all` を追加したが、日本語テキストの折り返しを完全に阻止してしまい横スクロールの根本原因に。3回の修正で解決。
+
+- **横スクロール根本修正**: `word-break:keep-all` → `word-break:normal` に変更
+  - `keep-all` は日本語テキストの自動折り返しを阻止し、狭い画面でコンテナからはみ出す原因だった
+  - `word-break:normal` で日本語は文字単位で自然に折り返される
+  - `overflow-wrap:break-word` は安全策として維持
+- `html` に `overflow-x:hidden` 追加（ページレベルの横スクロール防止）
+- `.bp` クラス: PC用 `<br>` タグ。768px以下で `display:none` に切り替え
 - `.table-scroll` クラス: テーブルの横スクロール防止ラッパー（`overflow-x:auto`）
-- 比較表（`.compare-table`）を `.table-scroll` で囲み、スマホでもテーブルが溢れない処理
+- 比較表（`.compare-table`）を `.table-scroll` で囲み
+- `.report-desc` の `min-width:260px` → `0` に変更（溢れ防止）
+- `.report-preview-wrap` に `max-width:100%` 追加
 - **768pxブレークポイント:**
-  - ナビリンクを非表示（`.nav-links{display:none}`）
-  - ヒーロー: タイトル 1.5rem、リード 0.85rem、メトリクス grid-template-columns:repeat(2,1fr)
-  - シミュレーション結果: グリッドを2列→2列にリフロー
-  - カードグリッド系（3列→1列）: `.step-grid`, `.why-grid`, `.voice-grid`
-  - 料金カード: `max-width:100%`
-  - セクション全体: padding 60px→40px、タイトル 1.5rem、リード 0.82rem
-  - 比較表セルの padding/font-size 縮小
+  - `*{max-width:100%;box-sizing:border-box}` で全要素の溢れ完全防止
+  - ナビリンク非表示、hero h1/sub の `<br>` 非表示、hero-divider 非表示
+  - フォント縮小: h1→1.3rem、section-title→1.2rem、本文→.75-.82rem
+  - voice-card テキストをセンタリング
+  - compare-table に `table-layout:fixed` 追加
+  - カードグリッド系（3列→1列）: `.pain-grid`, `.why-grid`, `.voice-grid`
+  - ボタン `width:100%` で全幅表示
 - **480pxブレークポイント:**
-  - container padding: 16px
-  - ヒーロー: タイトル 1.2rem、リード 0.78rem、badge 0.56rem
-  - セクション padding: 40px→32px
-  - シミュレーション結果: 1列表示
-  - 比較表セルのさらなる縮小
+  - フォントをさらに大幅縮小（h1→1.05rem、本文→.68-.72rem）
+  - container padding: 12px、sim-card padding: 18px 10px
+  - step-number: 36px（PC版64px→36px）
+  - 全UI要素を極小画面向けに最適化
+
+**教訓**: 日本語サイトで `word-break:keep-all` は使ってはいけない。デスクトップでは問題なく見えるが、モバイルの狭い画面でテキストが折り返せずオーバーフローする。
 
 **今後の課題・TODO（未着手）:**
 - [ ] お問い合わせフォームの実装（現在は mailto リンクのみ）
