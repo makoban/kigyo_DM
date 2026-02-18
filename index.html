@@ -18,7 +18,7 @@
       --font-serif:'Noto Serif JP',serif;--font-sans:'Noto Sans JP',sans-serif;
       --radius-sm:8px;--radius-md:12px;--radius-lg:20px;
     }
-    html{scroll-behavior:smooth;font-size:16px}
+    html{scroll-behavior:smooth;font-size:16px;overflow-x:hidden}
     body{font-family:var(--font-sans);color:var(--gray-700);background:var(--white);line-height:1.8;overflow-x:hidden;-webkit-font-smoothing:antialiased;word-break:keep-all;overflow-wrap:break-word}
     img{max-width:100%;height:auto}a{text-decoration:none;color:inherit}
 
@@ -161,7 +161,7 @@
     .report-desc-features li{padding:10px 0;font-size:.82rem;color:rgba(255,255,255,.55);display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.06)}
     .report-desc-features li:last-child{border-bottom:none}
     .report-desc-features li .feat-dot{flex-shrink:0;width:6px;height:6px;background:var(--gold-400);border-radius:50%}
-    .report-preview-wrap{flex:0 0 460px;position:relative}
+    .report-preview-wrap{flex:0 0 460px;max-width:100%;position:relative}
     .report-shadow{position:absolute;inset:-8px;background:rgba(0,0,0,.2);border-radius:12px;filter:blur(24px)}
     .report-page{position:relative;background:#fff;border-radius:4px;box-shadow:0 8px 40px rgba(0,0,0,.3);padding:24px 22px 36px;color:#1a1d23;font-family:var(--font-sans);font-size:10px;line-height:1.6;aspect-ratio:210/297;overflow:hidden}
     .rp-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:8px;border-bottom:2px solid #0d1b2a;margin-bottom:10px}
@@ -302,23 +302,28 @@
       .bp{display:none}
       .container{padding:0 20px}
       .nav-links{display:none}
+      .nav{padding:0 16px}
       /* ヒーロー */
-      .hero-content{padding:100px 20px 60px}
-      .hero-badge{font-size:.62rem;padding:6px 16px;letter-spacing:.08em}
+      .hero-content{padding:100px 16px 60px;max-width:100%}
+      .hero-badge{font-size:.62rem;padding:6px 16px;letter-spacing:.08em;white-space:normal;max-width:100%}
       .hero h1{font-size:1.5rem;line-height:1.8}
+      .hero h1 br{display:none}
       .hero-sub{font-size:.85rem}
-      .hero-metrics{gap:20px}
+      .hero-sub br{display:none}
+      .hero-metrics{gap:20px;flex-wrap:wrap}
       .hero-metric .value{font-size:1.7rem}
       /* セクション共通 */
       .section{padding:64px 0}
       .section-title{font-size:1.35rem;line-height:1.7}
       .section-lead{font-size:.85rem;margin-bottom:32px}
       /* シミュレーション */
-      .sim-card{padding:28px 20px}
+      .sim-card{padding:28px 16px}
+      .sim-input{font-size:.85rem;padding:14px 16px}
       .sim-main-metrics{grid-template-columns:1fr}
       .sim-sub-metrics{grid-template-columns:1fr}
-      .sim-bar-label{width:76px;font-size:.7rem}
-      .sim-bar-value{width:48px;font-size:.7rem}
+      .sim-bar-row{gap:8px}
+      .sim-bar-label{width:68px;font-size:.7rem}
+      .sim-bar-value{width:44px;font-size:.7rem}
       .sim-budget-row{flex-direction:column;gap:8px}
       .sim-features{gap:8px}
       .sim-feat-tag{font-size:.65rem;padding:5px 12px}
@@ -338,17 +343,20 @@
       .step-content p{font-size:.82rem}
       /* レポートサンプル */
       .report-wrap{flex-direction:column;align-items:center}
-      .report-preview-wrap{flex:none;width:100%;max-width:380px}
+      .report-preview-wrap{flex:none;width:100%;max-width:100%}
       .report-desc{text-align:center}
       .report-desc h3{font-size:1rem}
+      .report-desc h3 br{display:none}
       .report-desc p{font-size:.82rem}
       .report-desc-features li{font-size:.78rem;justify-content:center}
       /* なぜ・料金 */
       .why-card{padding:28px 24px}
       .why-card h3{font-size:.95rem}
       .why-card p{font-size:.82rem}
+      .pricing-card{max-width:100%}
       .pricing-amount .num{font-size:2.8rem}
       /* 比較表 */
+      .compare-table{min-width:0}
       .compare-table th,.compare-table td{padding:12px 8px;font-size:.72rem}
       /* お客様の声 */
       .voice-grid{grid-template-columns:1fr}
@@ -361,34 +369,108 @@
       .final-cta{padding:72px 0}
       .final-cta h2{font-size:1.3rem}
       .final-cta p{font-size:.82rem}
-      footer{font-size:.65rem}
+      footer{font-size:.65rem;padding:28px 16px}
       footer p{line-height:1.8}
     }
 
     /* === レスポンシブ 480px === */
     @media(max-width:480px){
-      .container{padding:0 16px}
-      .hero-content{padding:90px 16px 48px}
-      .hero-badge{font-size:.55rem;padding:5px 12px;letter-spacing:.06em}
-      .hero h1{font-size:1.2rem;line-height:1.9}
-      .hero-sub{font-size:.78rem}
-      .hero-metrics{flex-direction:column;gap:12px}
+      .container{padding:0 14px}
+      .hero-content{padding:80px 12px 40px}
+      .hero-badge{font-size:.55rem;padding:5px 12px;letter-spacing:.04em}
+      .hero h1{font-size:1.15rem;line-height:1.9}
+      .hero-sub{font-size:.75rem;line-height:2}
+      .hero-metrics{flex-direction:column;gap:10px}
       .hero-divider{width:40px;height:1px}
-      .hero-metric .value{font-size:1.5rem}
-      .hero-actions{flex-direction:column}
-      .btn-primary,.btn-outline,.btn-gold,.btn-dark{width:100%;text-align:center;padding:14px 20px;font-size:.8rem}
-      .section-title{font-size:1.15rem}
-      .section-label{font-size:.6rem}
-      .section-label::before,.section-label::after{width:12px;margin:0 8px}
-      .section-lead{font-size:.8rem}
-      .sim-main-metric .metric-value{font-size:1.8rem}
-      .sim-bar-label{width:64px;font-size:.65rem}
-      .solution-content p{font-size:.85rem;line-height:2}
-      .solution-highlight{font-size:1.05rem}
-      .step-content p{font-size:.78rem}
+      .hero-metric .value{font-size:1.4rem}
+      .hero-metric .value small{font-size:.75rem}
+      .hero-metric .label{font-size:.65rem}
+      .hero-actions{flex-direction:column;gap:10px}
+      .btn-primary,.btn-outline,.btn-gold,.btn-dark{width:100%;text-align:center;padding:14px 16px;font-size:.78rem}
+      .section{padding:48px 0}
+      .section-title{font-size:1.1rem;line-height:1.7}
+      .section-label{font-size:.58rem;letter-spacing:.15em}
+      .section-label::before,.section-label::after{width:10px;margin:0 6px}
+      .section-lead{font-size:.78rem;margin-bottom:24px}
+      /* シミュレーション */
+      .sim-card{padding:20px 12px}
+      .sim-input{font-size:.8rem;padding:12px 14px}
+      .sim-result-area{font-size:.9rem}
+      .sim-main-metric{padding:20px 12px}
+      .sim-main-metric .metric-value{font-size:1.6rem}
+      .sim-main-metric .metric-label{font-size:.65rem}
+      .sim-main-metric .metric-note{font-size:.62rem}
+      .sim-bar-row{gap:6px}
+      .sim-bar-label{width:56px;font-size:.62rem}
+      .sim-bar-track{height:14px}
+      .sim-bar-value{width:40px;font-size:.62rem}
+      .sim-budget-wrap{padding:14px 12px}
+      .sim-budget-row label{font-size:.72rem}
+      .sim-budget-input{width:100px;padding:8px 10px;font-size:.82rem}
+      .sim-budget-msg{font-size:.75rem}
+      .sim-feat-tag{font-size:.6rem;padding:4px 10px}
+      .sim-note{font-size:.6rem}
+      /* お悩み・解決策 */
+      .pain-item{padding:16px 18px}
+      .pain-item p{font-size:.8rem}
+      .solution-content p{font-size:.82rem;line-height:2}
+      .solution-highlight{font-size:1rem}
+      /* 3ステップ */
+      .step-items::before{left:19px}
+      .step-number{width:40px;height:40px;font-size:.4rem}
+      .step-number .num{font-size:.95rem}
+      .step-item{gap:12px;padding:24px 0}
+      .step-content h3{font-size:.92rem}
+      .step-content p{font-size:.75rem}
+      /* レポートサンプル */
+      .report-desc h3{font-size:.9rem}
+      .report-desc p{font-size:.78rem}
+      .report-desc-features li{font-size:.72rem}
+      /* なぜ・料金 */
+      .why-card{padding:22px 18px}
+      .why-card h3{font-size:.88rem}
+      .why-card p{font-size:.78rem}
+      .pricing-head{padding:28px 20px}
       .pricing-amount .num{font-size:2.2rem}
-      .compare-table th,.compare-table td{padding:10px 6px;font-size:.65rem}
-      .final-cta h2{font-size:1.15rem}
+      .pricing-body{padding:24px 18px}
+      .pricing-includes li{font-size:.8rem;padding:12px 0;gap:10px}
+      /* 比較表 */
+      .compare-table th,.compare-table td{padding:10px 5px;font-size:.62rem;line-height:1.5}
+      /* お客様の声 */
+      .voice-card{padding:20px 16px}
+      .voice-card::before{font-size:2rem;top:12px;left:16px}
+      .voice-card .person{font-size:.65rem;padding-top:16px}
+      .voice-card p{font-size:.78rem}
+      /* FAQ */
+      .faq-q{font-size:.8rem;padding:16px 0;gap:10px}
+      .faq-q .q-mark{width:22px;font-size:.72rem}
+      .faq-a .inner{font-size:.78rem;padding-left:32px;line-height:1.9}
+      /* 最終CTA */
+      .final-cta{padding:56px 0}
+      .final-cta h2{font-size:1.1rem;line-height:1.8}
+      .final-cta p{font-size:.78rem}
+      footer{font-size:.6rem;padding:20px 14px}
+    }
+
+    /* === レスポンシブ 360px（超小画面） === */
+    @media(max-width:360px){
+      .container{padding:0 12px}
+      .hero-content{padding:76px 10px 36px}
+      .hero-badge{font-size:.5rem;padding:4px 10px}
+      .hero h1{font-size:1rem;line-height:1.8}
+      .hero-sub{font-size:.7rem}
+      .hero-metric .value{font-size:1.2rem}
+      .hero-metric .label{font-size:.6rem}
+      .section-title{font-size:1rem}
+      .section-lead{font-size:.72rem}
+      .sim-card{padding:16px 10px}
+      .sim-input{font-size:.75rem;padding:10px 12px}
+      .sim-main-metric .metric-value{font-size:1.4rem}
+      .sim-bar-label{width:48px;font-size:.58rem}
+      .sim-bar-value{width:36px;font-size:.58rem}
+      .compare-table th,.compare-table td{padding:8px 4px;font-size:.58rem}
+      .pricing-amount .num{font-size:1.8rem}
+      .final-cta h2{font-size:.95rem}
     }
 
     .fade-in{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
