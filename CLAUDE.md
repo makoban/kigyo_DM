@@ -224,17 +224,88 @@
 
 ---
 
+### 2026-02-27 ── セッション6：HTTPS強制化 + LP改善 + プリペイド課金への全面移行
+
+**1. HTTPS強制化:**
+- GitHub Pages API経由で `https_enforced: true` に設定完了
+- `https://kigyo-dm.bantex.jp` が常時SSL接続に（セッション4で「DNS伝播後に手動で有効化が必要」と記録していた作業を完了）
+
+**2. LP改善（index.html）:**
+- **OGPメタタグ追加**: `og:title`, `og:description`, `og:image`, `twitter:card` を追加（SNSシェア時の表示に対応）
+- **SVGファビコン追加**: `favicon.svg`（ネイビー背景 + ゴールド「起」文字）をHTMLに `<link rel="icon">` で設定
+- **最終CTAセクションにLINEボタン追加**: https://lin.ee/5b8JT4C
+- **フッターにもLINEリンク追加**
+
+**3. 特商法ページ更新（tokushoho.html）:**
+セッション6でのプリペイドチャージ型課金への移行に伴い、以下の記載を更新:
+- **お支払方法**: クレジットカード（従量制） → 毎月自動チャージ制（スタート/スタンダード/プロ/フルの4プラン）
+- **お支払時期**: 都度決済または月締め後払い → 初回即時 + 毎月1日自動チャージ
+- **解約**: いつでも即時解約可 → 当月末でチャージ停止の文言を追記
+- **返品・キャンセル**: 発送済みDMは不可 → 残高返金不可・30日間猶予後失効を追記
+
+**4. プリペイドチャージ型課金への全面移行（webapp/）:**
+
+課金モデルの変更:
+- **変更前**: 月末後払い（SetupIntent + 月末バッチ請求）
+- **変更後**: プリペイドチャージ型（Stripe Subscription + 残高管理）
+- **理由**: 立替ゼロ・未収リスクゼロ・Stripe手数料最小
+
+4プラン定数（src/lib/stripe.ts に追加）:
+| プラン | 月額 | 通数 |
+|--------|------|------|
+| スタート | 3,800円 | 10通 |
+| スタンダード | 7,600円 | 20通 |
+| プロ | 15,200円 | 40通 |
+| フル | 38,000円 | 100通 |
+
+DB変更（002_prepaid_billing.sql 新規作成）:
+- `profiles`: `balance`, `stripe_subscription_id`, `plan_amount` カラム追加
+- `mailing_queue`: `balance_deducted` カラム追加
+- `monthly_usage`: `payment_status` に `'charged'` を追加
+
+新規API:
+- `/api/stripe/create-subscription`: Subscription作成（初回即時チャージ）
+- `/api/stripe/change-plan`: プラン変更（翌月1日反映）
+
+改修API:
+- `/api/stripe/complete-setup`: SetupIntent検証削除、sender + subscription保存のみに簡略化
+- `/api/stripe/webhook`: `invoice.paid` → 残高加算、`payment_failed` → 停止、`subscription.deleted` → 解約
+- `/api/cron/monthly-billing`: 月末請求 → 毎日残高減算に変更（sent + 未精算アイテムを検索して減算）
+
+オンボーディング改修:
+- `budget/page.tsx`: 自由入力 → 4プランカード選択UIに変更
+- `payment/page.tsx`: SetupIntent → Subscription作成 + PaymentIntent決済に変更
+- `complete/page.tsx`: `setupIntentId` → `planAmount` に変更
+- `onboarding-store.ts`: `monthlyBudgetLimit` → `planAmount` に変更
+
+ダッシュボード改修:
+- `dashboard/page.tsx`: 月額上限 → 残り通数・残高表示に変更
+- `settings/page.tsx`: 月額上限入力 → 4プラン選択UI + プラン変更API呼び出しに変更
+- `billing/page.tsx`: 請求履歴 → チャージ・送付履歴に変更、残高表示追加
+
+型定義更新（types.ts）:
+- `Profile`: `balance`, `stripe_subscription_id`, `plan_amount` 追加
+- `MailingQueueItem`: `balance_deducted` 追加
+- `MonthlyUsage`: `payment_status` に `'charged'` 追加
+
+**ビルド結果**: 全29ルート ビルド成功・型エラーなし（セッション5終了時の27ルートから2ルート増加）
+
+---
+
 **今後の課題・TODO（未着手）:**
 - [ ] お問い合わせフォームの実装（現在は mailto リンクのみ）
 - [ ] 実際のお客様の声への差し替え（現在はサンプルテキスト）
 - [ ] メールアドレス `info@example.com` を実際のアドレスに変更
-- [ ] OGP（SNSシェア用）メタタグの追加
+- [x] OGP（SNSシェア用）メタタグの追加（セッション6で完了）
 - [ ] Google Analytics 等のアクセス解析タグの設置
-- [ ] ファビコンの設定
+- [x] ファビコンの設定（セッション6でSVGファビコン追加）
 - [x] 独自ドメインでのホスティング・公開（GitHub Pages + kigyo-dm.bantex.jp）
-- [ ] HTTPS強制（DNS伝播後にGitHub Pagesで有効化）
+- [x] HTTPS強制（セッション6でGitHub Pages API経由で設定完了）
 - [ ] e-Stat リアルAPI接続（現在はJSに内包した参考データ）
 - [ ] モバイルメニュー（ハンバーガー）の実装
+- [ ] Stripe に Product + 4 Price 作成（テストモード → 本番）
+- [ ] DB: 002_prepaid_billing.sql を Supabase 本番環境に適用
+- [ ] ダッシュボードの表示を通数ベースに本番確認
 
 ---
 
@@ -242,10 +313,22 @@
 
 ```
 DM自動集客/
-├── index.html      ... LPページ（メインファイル）
-├── tokushoho.html  ... 特定商取引法に基づく表記ページ
-├── CNAME           ... GitHub Pagesカスタムドメイン設定（kigyo-dm.bantex.jp）
-└── CLAUDE.md       ... このファイル（開発履歴・引き継ぎメモ）
+├── index.html           ... LPページ（メインファイル）
+├── tokushoho.html       ... 特定商取引法に基づく表記ページ
+├── CNAME                ... GitHub Pagesカスタムドメイン設定（kigyo-dm.bantex.jp）
+├── CLAUDE.md            ... このファイル（開発履歴・引き継ぎメモ）
+└── webapp/              ... SaaSアプリ（Next.js 16）
+    ├── supabase/migrations/
+    │   ├── 001_initial_schema.sql
+    │   └── 002_prepaid_billing.sql  ... プリペイド課金スキーマ（セッション6追加）
+    ├── src/app/api/stripe/
+    │   ├── create-subscription/route.ts  ... Subscription作成（セッション6新規）
+    │   ├── change-plan/route.ts          ... プラン変更（セッション6新規）
+    │   ├── complete-setup/route.ts       ... セッション6改修
+    │   ├── setup-intent/route.ts
+    │   └── webhook/route.ts             ... セッション6改修
+    └── src/app/api/cron/
+        └── monthly-billing/route.ts     ... セッション6改修（残高減算に変更）
 ```
 
 ---
