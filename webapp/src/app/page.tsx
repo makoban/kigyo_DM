@@ -11,6 +11,6 @@ export default async function Home() {
     redirect("/dashboard");
   }
 
-  // Serve static LP for unauthenticated visitors
-  redirect("/lp.html");
+  // Not logged in → start onboarding (LP is on GitHub Pages)
+  redirect("/onboarding/area");
 }
