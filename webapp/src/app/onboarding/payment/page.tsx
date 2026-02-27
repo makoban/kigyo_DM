@@ -148,12 +148,20 @@ export default function PaymentPage() {
         <div className="p-4 rounded-xl bg-red-50 text-red-600 text-sm mb-4">
           {error}
         </div>
-        <Button
-          variant="outline"
-          onClick={() => router.push("/onboarding/budget")}
-        >
-          戻る
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={() => router.push("/onboarding/budget")}
+          >
+            戻る
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => { window.location.href = "https://kigyo-dm.bantex.jp/"; }}
+          >
+            TOPに戻る
+          </Button>
+        </div>
       </div>
     );
   }
@@ -173,9 +181,19 @@ export default function PaymentPage() {
 
   return (
     <div className="animate-fade-in-up">
-      <h1 className="font-serif text-2xl font-semibold text-navy-800 mb-6">
+      <h1 className="font-serif text-2xl font-semibold text-navy-800 mb-4">
         お支払い
       </h1>
+
+      {/* Billing description */}
+      <div className="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-200 flex items-start gap-3">
+        <span className="mt-0.5 text-blue-500 shrink-0" aria-hidden="true">
+          &#9432;
+        </span>
+        <p className="text-sm text-blue-800 leading-relaxed">
+          毎月自動チャージしてその中から支払う安心の課金制。いつでも解約可能。手数料はかかりません。
+        </p>
+      </div>
 
       <Elements
         stripe={stripePromise}

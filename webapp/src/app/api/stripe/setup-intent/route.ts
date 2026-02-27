@@ -29,10 +29,18 @@ export async function POST() {
       });
       customerId = customer.id;
 
+      // Use UPSERT so that if no profile row exists (e.g. Google OAuth users),
+      // a new row is inserted instead of the UPDATE silently doing nothing.
       await supabase
         .from("profiles")
-        .update({ stripe_customer_id: customerId })
-        .eq("id", user.id);
+        .upsert(
+          {
+            id: user.id,
+            email: user.email || profile?.email || null,
+            stripe_customer_id: customerId,
+          },
+          { onConflict: "id" }
+        );
     }
 
     // Create SetupIntent

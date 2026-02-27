@@ -30,7 +30,7 @@ export default function OnboardingLayout({
       {/* Header */}
       <header className="bg-navy-800 text-white">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-          <a href="/" className="font-serif text-lg font-semibold tracking-wide">
+          <a href="https://kigyo-dm.bantex.jp/" className="font-serif text-lg font-semibold tracking-wide">
             <span className="text-gold-400">起業サーチ</span>
             <span className="text-gray-300 text-sm ml-1">DM営業</span>
           </a>

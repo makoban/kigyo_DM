@@ -71,25 +71,40 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get Stripe customer ID
+    // Get Stripe customer ID (profile may not exist for Google OAuth users)
     const { data: profile } = await supabase
       .from("profiles")
-      .select("stripe_customer_id")
+      .select("stripe_customer_id, email")
       .eq("id", user.id)
       .single();
 
-    if (!profile?.stripe_customer_id) {
-      return NextResponse.json(
-        { error: "Stripe顧客が見つかりません" },
-        { status: 400 }
-      );
+    let customerId = profile?.stripe_customer_id;
+
+    if (!customerId) {
+      // Create Stripe customer and upsert profile row so subsequent calls succeed
+      const customer = await stripe.customers.create({
+        email: user.email || profile?.email || undefined,
+        metadata: { supabase_user_id: user.id },
+      });
+      customerId = customer.id;
+
+      await supabase
+        .from("profiles")
+        .upsert(
+          {
+            id: user.id,
+            email: user.email || profile?.email || null,
+            stripe_customer_id: customerId,
+          },
+          { onConflict: "id" }
+        );
     }
 
     const priceId = await getOrCreatePrice(planAmount);
 
     // Create Subscription (初回は即時課金)
     const subscription = await stripe.subscriptions.create({
-      customer: profile.stripe_customer_id,
+      customer: customerId,
       items: [{ price: priceId }],
       payment_behavior: "default_incomplete",
       payment_settings: {
