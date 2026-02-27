@@ -292,6 +292,68 @@ DB変更（002_prepaid_billing.sql 新規作成）:
 
 ---
 
+### 2026-02-28 ── セッション7：商圏レポート統合 + 各種バグ修正
+
+**1. アーキテクチャ修正（LP / webapp分離）:**
+- **問題**: 前セッションでLP+webappを両方Renderに統合 → Cloudflare制約でカスタムドメインSSLエラー（409/1001）
+- **修正**: LP（index.html）はGitHub Pages（kigyo-dm.bantex.jp）、webapp（Next.js）はRender（kigyo-dm-webapp.onrender.com）に分離
+- CNAME復元、index.htmlのCTAリンクを `https://kigyo-dm-webapp.onrender.com/onboarding/area` に変更
+- DNS伝播待ちの間、hostsファイルに `185.199.108.153 kigyo-dm.bantex.jp` を一時追加
+
+**2. 商圏データレポート統合（Worker API → A4コンポーネント）:**
+- **新規ファイル**: `webapp/src/lib/shoken-api.ts` — Worker APIクライアント（e-Stat + Gemini 2.0 Flash）
+- **新規ファイル**: `webapp/src/app/api/shoken/route.ts` — CORSプロキシ（Next.js API Route経由でWorker APIを呼び出し）
+- **新規ファイル**: `webapp/src/components/shoken-report.tsx` — A4商圏レポートコンポーネント
+- Worker API: `https://house-search-proxy.ai-fudosan.workers.dev`（ai-shokenと共有）
+- e-Stat: 都道府県コードで総人口・世帯数を取得
+- Gemini: プロンプトで商圏分析データをJSON形式で生成
+- `onboarding-store.ts` に `shokenData` フィールド追加
+
+**3. A4商圏レポートのデザイン（shoken-report.tsx）:**
+- テーマ: ネイビー(#0d1b2a) + ゴールド(#c9a84c)
+- `height: 297mm`（A4固定高さ）+ `flex flex-col` でフッターを最下部固定
+- AI分析セクションに `flex-1` で残余スペースを自動充填
+- **10指標グリッド（5×2）**: 総人口/世帯数/事業所数/人口密度/人口増減率/世帯年収/昼夜間比/小売消費指数/生産年齢人口/出店適性
+- **全国平均との比較テーブル**: 6指標（世帯年収/人口密度/昼夜間比/事業所密度/高齢者率/世帯人員）× 当地域 vs 全国 + 差分%
+- **年齢構成バー**: 5区分の横棒グラフ + 全国平均の赤い参照ライン
+- **消費力指数**: 小売/飲食/サービスの3指数を横棒グラフで全国平均比較
+- **市場ポテンシャル**: 小売千人密度/医療万人密度/地域総所得/消費力総合
+- **事業所統計**: 4業種の横棒グラフ + 構成比% + 構成比バー（凡例付き）
+- **出店適性スコア**: 5軸バー（交通/人口/競合/消費力/成長性）+ 総合スコア・判定グレードカード
+- **競合環境**: 飽和度4段階ゲージ + 参入余地のある業種タグ
+- **昼夜間人口**: 3カラムカード（昼間/夜間/昼夜比）+ 地域特性の自動コメント
+- **AI商圏分析 + AI総合判定**: 2カラム、残余スペースを埋める
+
+**4. プレビュー画面の強化（preview/page.tsx）:**
+- 挨拶文とレポートの2枚をタブ切替で表示
+- 挨拶文: B5→A4に変更（`aspectRatio: "210/297"`）
+- 「この2枚が封筒に同封されます」バッジ表示
+
+**5. A4両ページの共通フッター宣伝文:**
+- 挨拶文A4・商圏レポートA4の両方の最下部に追加:
+  「このDMは起業サーチDM（株式会社バンテックス https://kigyo-dm.bantex.jp/）という一通380円（税込）のサービスで自動でお送りしております」
+
+**6. Google OAuth リダイレクト修正:**
+- Supabase共有プロジェクト（ai-fudosan）の`uri_allow_list`にRender URLを追加
+- Supabase Management API: `PATCH /v1/projects/{ref}/config/auth`
+
+**7. Stripe決済エラー修正:**
+- Google OAuth ユーザーが `profiles` テーブルに行がない問題 → `.upsert({ onConflict: "id" })` に修正
+- `create-subscription`: 既存の incomplete subscription をキャンセルしてから新規作成
+- `paymentIntent` のnullチェック追加
+
+**8. UI改善:**
+- ヘッダーロゴのリンク先: `/` → `https://kigyo-dm.bantex.jp/`
+- オンボーディング全ページ共通フッターに「← TOPページに戻る」リンク追加（layout.tsx）
+- 支払いページに課金説明: 「毎月自動チャージしてその中から支払う安心の課金制。いつでも解約可能。手数料はかかりません。」
+
+**Renderデプロイ情報:**
+- サービス名: kigyo-dm-webapp
+- プラン: Starter（$7/月）
+- URL: `https://kigyo-dm-webapp.onrender.com`
+
+---
+
 **今後の課題・TODO（未着手）:**
 - [ ] お問い合わせフォームの実装（現在は mailto リンクのみ）
 - [ ] 実際のお客様の声への差し替え（現在はサンプルテキスト）
@@ -301,11 +363,14 @@ DB変更（002_prepaid_billing.sql 新規作成）:
 - [x] ファビコンの設定（セッション6でSVGファビコン追加）
 - [x] 独自ドメインでのホスティング・公開（GitHub Pages + kigyo-dm.bantex.jp）
 - [x] HTTPS強制（セッション6でGitHub Pages API経由で設定完了）
-- [ ] e-Stat リアルAPI接続（現在はJSに内包した参考データ）
+- [x] e-Stat リアルAPI接続（セッション7でWorker API経由で実現）
 - [ ] モバイルメニュー（ハンバーガー）の実装
 - [ ] Stripe に Product + 4 Price 作成（テストモード → 本番）
 - [ ] DB: 002_prepaid_billing.sql を Supabase 本番環境に適用
 - [ ] ダッシュボードの表示を通数ベースに本番確認
+- [ ] STRIPE_WEBHOOK_SECRET の設定（Render環境変数に未設定）
+- [ ] hostsファイルの一時エントリ削除（185.199.108.153 kigyo-dm.bantex.jp）
+- [ ] 解約機能のUI実装（現在は説明文のみ）
 
 ---
 
@@ -321,12 +386,16 @@ DM自動集客/
     ├── supabase/migrations/
     │   ├── 001_initial_schema.sql
     │   └── 002_prepaid_billing.sql  ... プリペイド課金スキーマ（セッション6追加）
+    ├── src/app/api/shoken/
+    │   └── route.ts                     ... 商圏データCORSプロキシ（セッション7新規）
     ├── src/app/api/stripe/
-    │   ├── create-subscription/route.ts  ... Subscription作成（セッション6新規）
+    │   ├── create-subscription/route.ts  ... Subscription作成（セッション7でincomplete対策追加）
     │   ├── change-plan/route.ts          ... プラン変更（セッション6新規）
     │   ├── complete-setup/route.ts       ... セッション6改修
-    │   ├── setup-intent/route.ts
+    │   ├── setup-intent/route.ts         ... セッション7でUPSERT対応
     │   └── webhook/route.ts             ... セッション6改修
+    ├── src/lib/shoken-api.ts            ... Worker APIクライアント（セッション7新規）
+    ├── src/components/shoken-report.tsx  ... A4商圏レポートコンポーネント（セッション7新規）
     └── src/app/api/cron/
         └── monthly-billing/route.ts     ... セッション6改修（残高減算に変更）
 ```
