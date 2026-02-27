@@ -100,6 +100,16 @@ export async function POST(req: NextRequest) {
         );
     }
 
+    // Cancel any existing incomplete subscriptions to avoid duplicates
+    const existingSubs = await stripe.subscriptions.list({
+      customer: customerId,
+      status: "incomplete",
+      limit: 10,
+    });
+    for (const sub of existingSubs.data) {
+      await stripe.subscriptions.cancel(sub.id);
+    }
+
     const priceId = await getOrCreatePrice(planAmount);
 
     // Create Subscription (初回は即時課金)
@@ -119,7 +129,14 @@ export async function POST(req: NextRequest) {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const invoice = subscription.latest_invoice as any;
-    const paymentIntent = invoice?.payment_intent as Stripe.PaymentIntent;
+    const paymentIntent = invoice?.payment_intent as Stripe.PaymentIntent | undefined;
+
+    if (!paymentIntent?.client_secret) {
+      return NextResponse.json(
+        { error: "決済の初期化に失敗しました。再度お試しください。" },
+        { status: 500 }
+      );
+    }
 
     // Save subscription ID and plan amount to profile
     await supabase
