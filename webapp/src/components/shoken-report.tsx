@@ -23,7 +23,6 @@ const NATIONAL_AVG = {
   age_50_64_pct: 20.0,
   over_65_pct: 30.0,
   households_per_pop: 2.21,
-  growth_rate: -0.7,
 };
 
 function fmt(n: number | undefined | null): string {
@@ -45,11 +44,9 @@ function pctDiffColor(local: number, national: number): string {
 function ScoreBar({ score, label }: { score: number; label: string }) {
   const w = Math.max(0, Math.min(100, score));
   return (
-    <div className="flex items-center gap-1 text-[8px]">
-      <span className="w-[38px] text-right text-gray-500 shrink-0">
-        {label}
-      </span>
-      <div className="flex-1 h-[10px] bg-gray-100 rounded-sm overflow-hidden">
+    <div className="flex items-center gap-1.5 text-[9px]">
+      <span className="w-[42px] text-right text-gray-500 shrink-0">{label}</span>
+      <div className="flex-1 h-[12px] bg-gray-100 rounded-sm overflow-hidden">
         <div
           className="h-full rounded-sm"
           style={{
@@ -59,7 +56,7 @@ function ScoreBar({ score, label }: { score: number; label: string }) {
           }}
         />
       </div>
-      <span className="w-[22px] font-bold text-navy-800">{score}</span>
+      <span className="w-[26px] font-bold text-navy-800">{score}</span>
     </div>
   );
 }
@@ -84,7 +81,7 @@ function CompareRow({
 
   return (
     <tr className="border-b border-gray-50">
-      <td className="text-gray-500 py-[1.5px] pr-1">{label}</td>
+      <td className="text-gray-500 py-[2px] pr-1">{label}</td>
       <td className="font-semibold text-right" style={{ color: "#0d1b2a" }}>
         {local}
         <span className="text-gray-400 font-normal text-[7px] ml-0.5">{unit}</span>
@@ -93,7 +90,7 @@ function CompareRow({
         {national}
         <span className="text-[7px] ml-0.5">{unit}</span>
       </td>
-      <td className="text-right font-semibold" style={{ width: "44px" }}>
+      <td className="text-right font-semibold" style={{ width: "48px" }}>
         {diff !== null ? (
           <span style={{ color: diff >= 0 ? "#c9a84c" : "#64748b", fontSize: "8px" }}>
             {diff >= 0 ? "+" : ""}
@@ -111,9 +108,9 @@ function AgeBar({ label, pct, avg }: { label: string; pct: number; avg: number }
   const w = Math.max(0, Math.min(100, pct * 2));
   const avgW = Math.max(0, Math.min(100, avg * 2));
   return (
-    <div className="flex items-center gap-1 text-[8px]">
-      <span className="w-[32px] text-right text-gray-500 shrink-0">{label}</span>
-      <div className="flex-1 h-[9px] bg-gray-100 rounded-sm overflow-hidden relative">
+    <div className="flex items-center gap-1 text-[9px]">
+      <span className="w-[36px] text-right text-gray-500 shrink-0">{label}</span>
+      <div className="flex-1 h-[11px] bg-gray-100 rounded-sm overflow-hidden relative">
         <div
           className="h-full rounded-sm absolute top-0 left-0"
           style={{ width: `${w}%`, background: "#c9a84c", opacity: 0.7 }}
@@ -123,8 +120,8 @@ function AgeBar({ label, pct, avg }: { label: string; pct: number; avg: number }
           style={{ left: `${avgW}%`, borderColor: "#ef4444", opacity: 0.5 }}
         />
       </div>
-      <span className="w-[32px] font-bold text-navy-800">{pct.toFixed(1)}%</span>
-      <span className="w-[24px] text-gray-400 text-[7px]">({avg.toFixed(1)})</span>
+      <span className="w-[36px] font-bold text-navy-800">{pct.toFixed(1)}%</span>
+      <span className="w-[28px] text-gray-400 text-[7px]">({avg.toFixed(1)})</span>
     </div>
   );
 }
@@ -142,9 +139,9 @@ function IndexBar({
   const w = (value / maxVal) * 100;
   const avgW = (avg / maxVal) * 100;
   return (
-    <div className="flex items-center gap-1 text-[8px]">
-      <span className="w-[44px] text-right text-gray-500 shrink-0">{label}</span>
-      <div className="flex-1 h-[9px] bg-gray-100 rounded-sm overflow-hidden relative">
+    <div className="flex items-center gap-1 text-[9px]">
+      <span className="w-[48px] text-right text-gray-500 shrink-0">{label}</span>
+      <div className="flex-1 h-[11px] bg-gray-100 rounded-sm overflow-hidden relative">
         <div
           className="h-full rounded-sm absolute top-0 left-0"
           style={{ width: `${w}%`, background: "#0d1b2a", opacity: 0.65 }}
@@ -154,10 +151,10 @@ function IndexBar({
           style={{ left: `${avgW}%`, borderColor: "#c9a84c", opacity: 0.8 }}
         />
       </div>
-      <span className="w-[22px] font-bold text-navy-800">{value}</span>
+      <span className="w-[24px] font-bold text-navy-800">{value}</span>
       <span
-        className="w-[36px] text-right font-semibold"
-        style={{ color: pctDiffColor(value, avg), fontSize: "7px" }}
+        className="w-[40px] text-right font-semibold"
+        style={{ color: pctDiffColor(value, avg), fontSize: "8px" }}
       >
         {pctDiff(value, avg)}
       </span>
@@ -173,7 +170,7 @@ function SaturationGauge({ level, index }: { level: string; index: number }) {
       {levels.map((l, i) => (
         <div
           key={l}
-          className="flex-1 text-center py-[2px] rounded-sm text-[7px] font-bold"
+          className="flex-1 text-center py-[3px] rounded-sm text-[8px] font-bold"
           style={{
             background:
               i <= activeIdx
@@ -189,10 +186,25 @@ function SaturationGauge({ level, index }: { level: string; index: number }) {
           {l}
         </div>
       ))}
-      <span className="text-[8px] font-semibold text-gray-600 ml-1 w-[28px]">
+      <span className="text-[9px] font-semibold text-gray-600 ml-1 w-[28px]">
         {index}
       </span>
     </div>
+  );
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h3
+      className="text-[10px] font-bold"
+      style={{
+        color: "#0d1b2a",
+        borderLeft: "3px solid #c9a84c",
+        paddingLeft: "5px",
+      }}
+    >
+      {children}
+    </h3>
   );
 }
 
@@ -232,39 +244,39 @@ export default function ShokenReport({
 
   return (
     <div
-      className="bg-white text-gray-900 w-full"
+      className="bg-white text-gray-900 w-full flex flex-col"
       style={{
         fontFamily: '"Noto Sans JP", "Noto Serif JP", sans-serif',
         maxWidth: "210mm",
-        minHeight: "290mm",
-        padding: "14px 18px 10px",
+        height: "297mm",
+        padding: "20px 24px 16px",
         fontSize: "9px",
-        lineHeight: "1.4",
+        lineHeight: "1.45",
       }}
     >
       {/* Header */}
       <div
-        style={{ borderTop: "3px solid #c9a84c", paddingTop: "5px" }}
-        className="mb-2"
+        style={{ borderTop: "3px solid #c9a84c", paddingTop: "8px" }}
+        className="mb-3"
       >
         <div className="flex items-end justify-between">
           <div>
             <h1
-              className="text-[14px] font-bold tracking-wide"
+              className="text-[16px] font-bold tracking-wide"
               style={{ color: "#0d1b2a", fontFamily: '"Noto Serif JP", serif' }}
             >
               商圏データレポート
             </h1>
-            <p className="text-[11px] font-semibold mt-0.5" style={{ color: "#c9a84c" }}>
+            <p className="text-[12px] font-semibold mt-0.5" style={{ color: "#c9a84c" }}>
               {areaLabel}
             </p>
           </div>
-          <p className="text-[7px] text-gray-400">{date} 作成</p>
+          <p className="text-[8px] text-gray-400">{date} 作成</p>
         </div>
       </div>
 
       {/* Key Metrics Grid 5x2 */}
-      <div className="grid grid-cols-5 gap-1 mb-2">
+      <div className="grid grid-cols-5 gap-1.5 mb-4">
         {[
           { label: "総人口", value: fmt(p.total_population), unit: "人" },
           { label: "世帯数", value: fmt(p.households), unit: "世帯" },
@@ -305,7 +317,7 @@ export default function ShokenReport({
         ].map((m) => (
           <div
             key={m.label}
-            className="rounded px-1 py-[3px] text-center"
+            className="rounded px-1.5 py-1 text-center"
             style={{
               background: m.highlight ? "#0d1b2a" : "#f8fafc",
               border: m.highlight ? "none" : "1px solid #e2e8f0",
@@ -318,7 +330,7 @@ export default function ShokenReport({
               {m.label}
             </p>
             <p
-              className="text-[12px] font-bold leading-tight"
+              className="text-[13px] font-bold leading-tight"
               style={{
                 color: m.highlight
                   ? "#fff"
@@ -328,10 +340,7 @@ export default function ShokenReport({
               }}
             >
               {m.value}
-              <span
-                className="text-[6px] font-normal ml-0.5"
-                style={{ color: m.highlight ? "#94a3b8" : "#94a3b8" }}
-              >
+              <span className="text-[6px] font-normal ml-0.5" style={{ color: "#94a3b8" }}>
                 {m.unit}
               </span>
             </p>
@@ -340,17 +349,17 @@ export default function ShokenReport({
       </div>
 
       {/* === Row 1: National Comparison Table + Age Composition === */}
-      <div className="grid grid-cols-2 gap-2 mb-1.5">
+      <div className="grid grid-cols-2 gap-3 mb-4">
         {/* National Comparison */}
         <div>
           <SectionTitle>全国平均との比較</SectionTitle>
-          <table className="w-full text-[8px] mt-0.5 border-collapse">
+          <table className="w-full text-[9px] mt-1 border-collapse">
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="text-left text-gray-400 font-normal pb-0.5">指標</th>
-                <th className="text-right text-gray-400 font-normal pb-0.5">当地域</th>
-                <th className="text-right text-gray-400 font-normal pb-0.5">全国</th>
-                <th className="text-right text-gray-400 font-normal pb-0.5" style={{ width: "44px" }}>
+                <th className="text-left text-gray-400 font-normal pb-1">指標</th>
+                <th className="text-right text-gray-400 font-normal pb-1">当地域</th>
+                <th className="text-right text-gray-400 font-normal pb-1">全国</th>
+                <th className="text-right text-gray-400 font-normal pb-1" style={{ width: "48px" }}>
                   差分
                 </th>
               </tr>
@@ -399,7 +408,7 @@ export default function ShokenReport({
         {/* Age Composition */}
         <div>
           <SectionTitle>年齢構成（全国平均比較）</SectionTitle>
-          <div className="space-y-[2px] mt-0.5">
+          <div className="space-y-1 mt-1">
             {age && (
               <>
                 <AgeBar label="〜19歳" pct={age.under_20_pct} avg={NATIONAL_AVG.under_20_pct} />
@@ -410,21 +419,21 @@ export default function ShokenReport({
               </>
             )}
           </div>
-          <p className="text-[7px] text-gray-400 mt-0.5">
+          <p className="text-[7px] text-gray-400 mt-1">
             ■ 当地域 ┊ 赤線: 全国平均 (カッコ内)
           </p>
 
           {/* Demographic insight */}
           <div
-            className="mt-1 rounded px-2 py-1"
+            className="mt-1.5 rounded px-2.5 py-1.5"
             style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}
           >
-            <p className="text-[7px] text-gray-400 mb-0.5">人口動態</p>
-            <div className="flex justify-between text-[8px]">
+            <p className="text-[8px] text-gray-400 mb-1">人口動態</p>
+            <div className="flex justify-between text-[9px]">
               <span className="text-gray-500">生産年齢(20-64歳)</span>
               <span className="font-bold" style={{ color: "#0d1b2a" }}>{workingAgePct}%</span>
             </div>
-            <div className="flex justify-between text-[8px]">
+            <div className="flex justify-between text-[9px] mt-0.5">
               <span className="text-gray-500">人口増減率</span>
               <span
                 className="font-bold"
@@ -442,41 +451,29 @@ export default function ShokenReport({
         </div>
       </div>
 
-      {/* === Row 2: Spending Power Indexes + Business Stats === */}
-      <div className="grid grid-cols-2 gap-2 mb-1.5">
+      {/* === Row 2: Spending Power + Business Stats === */}
+      <div className="grid grid-cols-2 gap-3 mb-4">
         {/* Spending Power */}
         <div>
           <SectionTitle>消費力指数（全国=100）</SectionTitle>
-          <div className="space-y-[2px] mt-0.5">
-            <IndexBar
-              label="小売消費"
-              value={sp.retail_spending_index || 0}
-              avg={NATIONAL_AVG.retail_spending_index}
-            />
-            <IndexBar
-              label="飲食消費"
-              value={sp.food_spending_index || 0}
-              avg={NATIONAL_AVG.food_spending_index}
-            />
-            <IndexBar
-              label="ｻｰﾋﾞｽ消費"
-              value={sp.service_spending_index || 0}
-              avg={NATIONAL_AVG.service_spending_index}
-            />
+          <div className="space-y-1 mt-1">
+            <IndexBar label="小売消費" value={sp.retail_spending_index || 0} avg={NATIONAL_AVG.retail_spending_index} />
+            <IndexBar label="飲食消費" value={sp.food_spending_index || 0} avg={NATIONAL_AVG.food_spending_index} />
+            <IndexBar label="ｻｰﾋﾞｽ消費" value={sp.service_spending_index || 0} avg={NATIONAL_AVG.service_spending_index} />
           </div>
-          <p className="text-[7px] text-gray-400 mt-0.5">
+          <p className="text-[7px] text-gray-400 mt-1">
             ■ 当地域 ┊ 金線: 全国平均(100)
           </p>
 
-          {/* Market potential estimate */}
+          {/* Market potential */}
           <div
-            className="mt-1 rounded px-2 py-1"
+            className="mt-2 rounded px-2.5 py-1.5"
             style={{ background: "#fffbeb", border: "1px solid #fde68a" }}
           >
-            <p className="text-[7px] font-bold mb-0.5" style={{ color: "#92400e" }}>
+            <p className="text-[8px] font-bold mb-1" style={{ color: "#92400e" }}>
               市場ポテンシャル
             </p>
-            <div className="grid grid-cols-2 gap-x-2 text-[8px]">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[9px]">
               <div className="flex justify-between">
                 <span className="text-gray-500">小売千人密度</span>
                 <span className="font-bold" style={{ color: "#0d1b2a" }}>
@@ -490,7 +487,7 @@ export default function ShokenReport({
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">世帯年収×世帯</span>
+                <span className="text-gray-500">地域総所得</span>
                 <span className="font-bold" style={{ color: "#c9a84c" }}>
                   {sp.avg_household_income && p.households
                     ? `${((sp.avg_household_income * p.households) / 10000).toFixed(0)}億円`
@@ -502,10 +499,7 @@ export default function ShokenReport({
                 <span className="font-bold" style={{ color: "#c9a84c" }}>
                   {sp.retail_spending_index && sp.food_spending_index && sp.service_spending_index
                     ? Math.round(
-                        (sp.retail_spending_index +
-                          sp.food_spending_index +
-                          sp.service_spending_index) /
-                          3
+                        (sp.retail_spending_index + sp.food_spending_index + sp.service_spending_index) / 3
                       )
                     : "—"}
                   <span className="text-[7px] text-gray-400 font-normal">/100</span>
@@ -518,7 +512,7 @@ export default function ShokenReport({
         {/* Business Establishments */}
         <div>
           <SectionTitle>事業所統計</SectionTitle>
-          <div className="space-y-[2px] mt-0.5">
+          <div className="space-y-1 mt-1">
             {[
               { label: "小売業", value: be.retail },
               { label: "飲食業", value: be.food_service },
@@ -529,10 +523,10 @@ export default function ShokenReport({
               const pctOfTotal = be.total ? ((ind.value || 0) / be.total * 100).toFixed(1) : "—";
               return (
                 <div key={ind.label} className="flex items-center gap-1">
-                  <span className="w-[44px] text-[8px] text-gray-500 shrink-0 text-right">
+                  <span className="w-[48px] text-[9px] text-gray-500 shrink-0 text-right">
                     {ind.label}
                   </span>
-                  <div className="flex-1 h-[9px] bg-gray-100 rounded-sm overflow-hidden">
+                  <div className="flex-1 h-[11px] bg-gray-100 rounded-sm overflow-hidden">
                     <div
                       className="h-full rounded-sm"
                       style={{
@@ -542,30 +536,27 @@ export default function ShokenReport({
                       }}
                     />
                   </div>
-                  <span className="w-[32px] text-[8px] font-semibold text-navy-800 text-right">
+                  <span className="w-[36px] text-[9px] font-semibold text-navy-800 text-right">
                     {fmt(ind.value)}
                   </span>
-                  <span className="w-[28px] text-[7px] text-gray-400 text-right">
+                  <span className="w-[30px] text-[8px] text-gray-400 text-right">
                     {pctOfTotal}%
                   </span>
                 </div>
               );
             })}
           </div>
-          <div className="flex justify-between text-[7px] text-gray-400 mt-0.5">
-            <span>
-              人口千人あたり {be.establishments_per_1000 || "—"} 事業所
-              (全国: {NATIONAL_AVG.establishments_per_1000})
-            </span>
-          </div>
+          <p className="text-[8px] text-gray-400 mt-1">
+            人口千人あたり {be.establishments_per_1000 || "—"} 事業所 (全国: {NATIONAL_AVG.establishments_per_1000})
+          </p>
 
-          {/* Business composition summary */}
+          {/* Business composition bar */}
           <div
-            className="mt-1 rounded px-2 py-1"
+            className="mt-2 rounded px-2.5 py-1.5"
             style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}
           >
-            <p className="text-[7px] text-gray-400 mb-0.5">事業所構成</p>
-            <div className="flex gap-0.5" style={{ height: "10px" }}>
+            <p className="text-[8px] text-gray-400 mb-1">事業所構成比</p>
+            <div className="flex gap-0.5" style={{ height: "12px" }}>
               {[
                 { label: "小売", value: be.retail, color: "#c9a84c" },
                 { label: "飲食", value: be.food_service, color: "#d4b970" },
@@ -589,7 +580,7 @@ export default function ShokenReport({
                 />
               ))}
             </div>
-            <div className="flex gap-2 mt-0.5 text-[7px]">
+            <div className="flex gap-2.5 mt-1 text-[8px]">
               {[
                 { label: "小売", color: "#c9a84c" },
                 { label: "飲食", color: "#d4b970" },
@@ -599,7 +590,7 @@ export default function ShokenReport({
               ].map((l) => (
                 <span key={l.label} className="flex items-center gap-0.5">
                   <span
-                    className="inline-block w-[6px] h-[6px] rounded-sm"
+                    className="inline-block w-[7px] h-[7px] rounded-sm"
                     style={{ background: l.color, opacity: 0.8 }}
                   />
                   <span className="text-gray-500">{l.label}</span>
@@ -611,11 +602,11 @@ export default function ShokenReport({
       </div>
 
       {/* === Row 3: Location Score + Competition & Daytime Pop === */}
-      <div className="grid grid-cols-2 gap-2 mb-1.5">
+      <div className="grid grid-cols-2 gap-3 mb-4">
         {/* Location Score */}
         <div>
           <SectionTitle>出店適性スコア</SectionTitle>
-          <div className="space-y-[2px] mt-0.5">
+          <div className="space-y-1 mt-1">
             <ScoreBar score={ls.traffic_score} label="交通" />
             <ScoreBar score={ls.population_score} label="人口" />
             <ScoreBar score={ls.competition_score} label="競合" />
@@ -623,18 +614,18 @@ export default function ShokenReport({
             <ScoreBar score={ls.growth_score} label="成長性" />
           </div>
           <div
-            className="mt-1 flex items-center justify-between rounded px-2 py-1"
+            className="mt-2 flex items-center justify-between rounded px-3 py-1.5"
             style={{ background: "#0d1b2a" }}
           >
             <div>
-              <span className="text-[7px]" style={{ color: "#94a3b8" }}>総合スコア</span>
-              <span className="text-[14px] font-bold ml-1" style={{ color: "#c9a84c" }}>
+              <span className="text-[8px]" style={{ color: "#94a3b8" }}>総合スコア</span>
+              <span className="text-[16px] font-bold ml-1.5" style={{ color: "#c9a84c" }}>
                 {ls.overall_score}
               </span>
-              <span className="text-[8px] ml-0.5" style={{ color: "#94a3b8" }}>/100</span>
+              <span className="text-[9px] ml-0.5" style={{ color: "#94a3b8" }}>/100</span>
             </div>
             <div
-              className="text-[16px] font-bold px-2 py-0.5 rounded"
+              className="text-[18px] font-bold px-2.5 py-0.5 rounded"
               style={{
                 color: "#fff",
                 background:
@@ -655,16 +646,16 @@ export default function ShokenReport({
         {/* Competition + Daytime */}
         <div>
           <SectionTitle>競合環境</SectionTitle>
-          <div className="mt-0.5">
+          <div className="mt-1">
             <SaturationGauge level={cd.saturation_level || "中"} index={cd.saturation_index || 0} />
           </div>
-          <div className="mt-1">
-            <p className="text-[7px] text-gray-400">参入余地のある業種</p>
-            <div className="flex flex-wrap gap-0.5 mt-0.5">
+          <div className="mt-1.5">
+            <p className="text-[8px] text-gray-400 mb-0.5">参入余地のある業種</p>
+            <div className="flex flex-wrap gap-1 mt-0.5">
               {(cd.opportunity_sectors || []).map((s) => (
                 <span
                   key={s}
-                  className="inline-block px-1.5 py-[1px] rounded text-[7px] font-semibold"
+                  className="inline-block px-2 py-[2px] rounded text-[8px] font-semibold"
                   style={{ background: "#fffbeb", color: "#92400e", border: "1px solid #fde68a" }}
                 >
                   {s}
@@ -673,61 +664,61 @@ export default function ShokenReport({
             </div>
           </div>
 
-          <div className="mt-1.5">
+          <div className="mt-3">
             <SectionTitle>昼夜間人口</SectionTitle>
-            <div className="mt-0.5 grid grid-cols-3 gap-1">
-              <div className="text-center rounded py-[2px]" style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+            <div className="mt-1 grid grid-cols-3 gap-1.5">
+              <div className="text-center rounded py-1" style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}>
                 <p className="text-[7px] text-gray-400">昼間</p>
-                <p className="text-[10px] font-bold" style={{ color: "#0d1b2a" }}>
+                <p className="text-[11px] font-bold" style={{ color: "#0d1b2a" }}>
                   {fmt(dp.daytime_pop)}
                 </p>
               </div>
-              <div className="text-center rounded py-[2px]" style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+              <div className="text-center rounded py-1" style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}>
                 <p className="text-[7px] text-gray-400">夜間</p>
-                <p className="text-[10px] font-bold" style={{ color: "#0d1b2a" }}>
+                <p className="text-[11px] font-bold" style={{ color: "#0d1b2a" }}>
                   {fmt(dp.nighttime_pop)}
                 </p>
               </div>
-              <div className="text-center rounded py-[2px]" style={{ background: "#0d1b2a" }}>
+              <div className="text-center rounded py-1" style={{ background: "#0d1b2a" }}>
                 <p className="text-[7px]" style={{ color: "#94a3b8" }}>昼夜比</p>
-                <p className="text-[10px] font-bold" style={{ color: "#c9a84c" }}>
+                <p className="text-[11px] font-bold" style={{ color: "#c9a84c" }}>
                   {dp.daytime_ratio ? `${dp.daytime_ratio.toFixed(1)}%` : "—"}
                 </p>
               </div>
             </div>
-            <p className="text-[7px] text-gray-400 mt-0.5">
+            <p className="text-[8px] text-gray-400 mt-1">
               {dp.daytime_ratio && dp.daytime_ratio > 100
-                ? "→ 昼間人口が多い = 周辺から人が集まるビジネス街・商業地"
+                ? "→ 昼間人口が多い＝周辺から人が集まるビジネス街・商業地"
                 : dp.daytime_ratio && dp.daytime_ratio < 100
-                  ? "→ 夜間人口が多い = 住宅地。地域密着型サービスに有利"
+                  ? "→ 夜間人口が多い＝住宅地。地域密着型サービスに有利"
                   : "→ 昼夜均衡型の地域"}
             </p>
           </div>
         </div>
       </div>
 
-      {/* === AI Analysis (2-column) === */}
-      <div className="grid grid-cols-2 gap-2 mb-1.5">
+      {/* === AI Analysis — grows to fill remaining space === */}
+      <div className="grid grid-cols-2 gap-3 flex-1 min-h-0">
         {/* AI Summary */}
-        <div>
+        <div className="flex flex-col">
           <SectionTitle>AI商圏分析</SectionTitle>
-          <p className="text-[8px] leading-relaxed mt-0.5" style={{ color: "#334155" }}>
+          <p className="text-[9px] leading-relaxed mt-1 flex-1" style={{ color: "#334155" }}>
             {data.shoken_summary || "分析データを取得中です..."}
           </p>
         </div>
 
         {/* AI Recommendation */}
-        <div>
+        <div className="flex flex-col">
           <SectionTitle>AI総合判定</SectionTitle>
           {ls.ai_recommendation && (
             <div
-              className="rounded px-2 py-1.5 mt-0.5"
+              className="rounded px-3 py-2 mt-1 flex-1"
               style={{
                 background: "#0d1b2a",
                 border: "1px solid rgba(201, 168, 76, 0.3)",
               }}
             >
-              <p className="text-[8px] leading-relaxed" style={{ color: "#e2e8f0" }}>
+              <p className="text-[9px] leading-relaxed" style={{ color: "#e2e8f0" }}>
                 {ls.ai_recommendation}
               </p>
             </div>
@@ -735,9 +726,9 @@ export default function ShokenReport({
         </div>
       </div>
 
-      {/* Footer */}
+      {/* Footer — always at bottom */}
       <div
-        className="text-center pt-1 mt-auto"
+        className="text-center pt-2 mt-3 shrink-0"
         style={{ borderTop: "1px solid #e2e8f0" }}
       >
         <p className="text-[7px] text-gray-400">
@@ -745,20 +736,5 @@ export default function ShokenReport({
         </p>
       </div>
     </div>
-  );
-}
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <h3
-      className="text-[9px] font-bold"
-      style={{
-        color: "#0d1b2a",
-        borderLeft: "3px solid #c9a84c",
-        paddingLeft: "4px",
-      }}
-    >
-      {children}
-    </h3>
   );
 }
