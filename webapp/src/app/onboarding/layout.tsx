@@ -51,6 +51,16 @@ export default function OnboardingLayout({
 
       {/* Content */}
       <main className="max-w-3xl mx-auto px-4 py-6">{children}</main>
+
+      {/* Footer */}
+      <footer className="max-w-3xl mx-auto px-4 pb-8 text-center">
+        <a
+          href="https://kigyo-dm.bantex.jp/"
+          className="inline-block text-xs text-gray-400 hover:text-gold-400 transition-colors"
+        >
+          &larr; TOPページに戻る
+        </a>
+      </footer>
     </div>
   );
 }
