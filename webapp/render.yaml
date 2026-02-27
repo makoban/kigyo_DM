@@ -1,0 +1,53 @@
+# Render Blueprint
+services:
+  - type: web
+    name: kigyo-dm-webapp
+    runtime: node
+    plan: starter  # $7/month
+    region: singapore
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: CRON_SECRET
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://kigyo-dm.bantex.jp
+      - key: NEXT_PUBLIC_UNIT_PRICE
+        value: "380"
+      - key: NODE_ENV
+        value: production
+    rootDir: webapp
+    customDomains:
+      - domain: kigyo-dm.bantex.jp
+
+# Cron Jobs (Render Cron Jobs are separate from web services)
+# Configure these manually in Render dashboard:
+#
+# 1. fetch-corporations (毎日17:00 JST = 08:00 UTC)
+#    URL: https://kigyo-dm.bantex.jp/api/cron/fetch-corporations
+#    Schedule: 0 8 * * *
+#    Headers: Authorization: Bearer <CRON_SECRET>
+#
+# 2. lock-queue (毎日16:30 JST = 07:30 UTC)
+#    URL: https://kigyo-dm.bantex.jp/api/cron/lock-queue
+#    Schedule: 30 7 * * *
+#    Headers: Authorization: Bearer <CRON_SECRET>
+#
+# 3. monthly-billing (毎月1日 09:00 JST = 00:00 UTC)
+#    URL: https://kigyo-dm.bantex.jp/api/cron/monthly-billing
+#    Schedule: 0 0 1 * *
+#    Headers: Authorization: Bearer <CRON_SECRET>

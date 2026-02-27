@@ -1,0 +1,15 @@
+# Secrets & credentials
+.env
+.env.*
+設定集*
+
+# Test / temp files
+sabun_test.zip
+index2.html
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (webapp has its own .gitignore too)
+node_modules/

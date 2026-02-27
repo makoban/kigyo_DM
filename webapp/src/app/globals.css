@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-navy-900: #080f1a;
+  --color-navy-800: #0d1b2a;
+  --color-navy-700: #162a3e;
+  --color-navy-600: #1f3a54;
+  --color-navy-500: #2a4a6b;
+  --color-gold-400: #c9a84c;
+  --color-gold-300: #d4b96a;
+  --color-gold-200: #e2cc8e;
+  --color-gold-100: #f5edda;
+  --color-gray-50: #f8f9fa;
+  --color-gray-100: #f1f3f5;
+  --color-gray-200: #e9ecef;
+  --color-gray-300: #dee2e6;
+  --color-gray-400: #adb5bd;
+  --color-gray-500: #868e96;
+  --color-gray-600: #5a6270;
+  --color-gray-700: #3d4450;
+  --color-gray-800: #2b3038;
+  --color-gray-900: #1a1d23;
+  --font-serif: "Noto Serif JP", serif;
+  --font-sans: "Noto Sans JP", sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-gray-700);
+  background: #fff;
+  line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+/* Progress bar for onboarding */
+.progress-bar-fill {
+  transition: width 0.4s ease;
+}
+
+/* Gold gradient text */
+.text-gold-gradient {
+  background: linear-gradient(135deg, var(--color-gold-400), var(--color-gold-200));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Card hover effect */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+/* Fade-in animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease forwards;
+}
