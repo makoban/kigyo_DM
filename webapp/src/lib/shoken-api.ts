@@ -1,7 +1,5 @@
 // Worker API client for 商圏データレポート generation
-// Uses shared Cloudflare Worker (ai-fudosan) for e-Stat + Gemini
-
-const WORKER_BASE = "https://house-search-proxy.ai-fudosan.workers.dev";
+// Calls via local Next.js API route to avoid CORS issues
 
 // Prefecture name → code mapping (for e-Stat API)
 const PREF_CODES: Record<string, string> = {
@@ -79,9 +77,12 @@ interface EstatPop {
 }
 
 async function fetchEstatPopulation(prefCode: string): Promise<EstatPop> {
-  const url = `${WORKER_BASE}/api/estat/population?statsDataId=0003448233&cdArea=${prefCode}000&limit=100`;
   try {
-    const res = await fetch(url);
+    const res = await fetch("/api/shoken", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "estat", prefCode }),
+    });
     if (!res.ok) return { total_population: null, households: null };
     const data = await res.json();
     const values =
@@ -230,10 +231,10 @@ export async function fetchShokenData(
 
   // Step 2: Gemini analysis
   const prompt = buildPrompt(prefecture, city, estatPop);
-  const res = await fetch(`${WORKER_BASE}/api/gemini`, {
+  const res = await fetch("/api/shoken", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt }),
+    body: JSON.stringify({ type: "gemini", prompt }),
   });
 
   if (!res.ok) {

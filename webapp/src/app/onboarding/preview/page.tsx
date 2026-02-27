@@ -55,7 +55,7 @@ export default function PreviewPage() {
               : "border-transparent text-gray-400 hover:text-gray-600"
           }`}
         >
-          挨拶文 (B5)
+          挨拶文 (A4)
         </button>
         <button
           onClick={() => setTab("report")}
@@ -78,9 +78,9 @@ export default function PreviewPage() {
 
       {/* Tab content */}
       {tab === "greeting" ? (
-        /* B5 Greeting Letter */
+        /* A4 Greeting Letter */
         <div className="mb-6 bg-white border-2 border-gray-200 rounded-xl shadow-sm overflow-hidden">
-          <div className="p-6 md:p-8" style={{ minHeight: "500px" }}>
+          <div className="p-8 md:p-10" style={{ minHeight: "680px", aspectRatio: "210/297" }}>
             <div className="h-1 w-16 bg-gold-400 mb-6" />
             <p className="text-xs text-gray-400 mb-4">令和〇年〇月〇日</p>
             <div className="mb-6">
