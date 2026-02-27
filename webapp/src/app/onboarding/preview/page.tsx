@@ -80,7 +80,7 @@ export default function PreviewPage() {
       {tab === "greeting" ? (
         /* A4 Greeting Letter */
         <div className="mb-6 bg-white border-2 border-gray-200 rounded-xl shadow-sm overflow-hidden">
-          <div className="p-8 md:p-10" style={{ minHeight: "680px", aspectRatio: "210/297" }}>
+          <div className="p-8 md:p-10 flex flex-col" style={{ minHeight: "680px", aspectRatio: "210/297" }}>
             <div className="h-1 w-16 bg-gold-400 mb-6" />
             <p className="text-xs text-gray-400 mb-4">令和〇年〇月〇日</p>
             <div className="mb-6">
@@ -132,6 +132,12 @@ export default function PreviewPage() {
                   送り主情報は未設定です（後から設定画面で入力できます）
                 </p>
               )}
+            </div>
+            {/* Service footer */}
+            <div className="border-t border-gray-100 mt-auto pt-3">
+              <p className="text-[7px] text-gray-400 text-center">
+                このDMは起業サーチDM（株式会社バンテックス https://kigyo-dm.bantex.jp/）という一通380円（税込）のサービスで自動でお送りしております
+              </p>
             </div>
           </div>
         </div>

@@ -728,11 +728,14 @@ export default function ShokenReport({
 
       {/* Footer — always at bottom */}
       <div
-        className="text-center pt-2 mt-3 shrink-0"
+        className="pt-2 mt-3 shrink-0"
         style={{ borderTop: "1px solid #e2e8f0" }}
       >
-        <p className="text-[7px] text-gray-400">
-          データソース: 政府統計(e-Stat) + AI分析(Gemini 2.0 Flash) ｜ 全国平均値は経済センサス・国勢調査に基づく参考値 ｜ 起業サーチDM営業サービス
+        <p className="text-[7px] text-gray-400 text-center">
+          データソース: 政府統計(e-Stat) + AI分析(Gemini 2.0 Flash) ｜ 全国平均値は経済センサス・国勢調査に基づく参考値
+        </p>
+        <p className="text-[7px] text-gray-400 text-center mt-0.5">
+          このDMは起業サーチDM（株式会社バンテックス https://kigyo-dm.bantex.jp/）という一通380円（税込）のサービスで自動でお送りしております
         </p>
       </div>
     </div>
