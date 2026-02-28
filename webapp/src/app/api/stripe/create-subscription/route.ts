@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
       // Create Stripe customer and upsert profile row so subsequent calls succeed
       const customer = await stripe.customers.create({
         email: profile?.email || undefined,
-        metadata: { supabase_user_id: userId },
+        metadata: { user_id: userId },
       });
       customerId = customer.id;
 
