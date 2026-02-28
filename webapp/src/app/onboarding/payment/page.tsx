@@ -10,7 +10,7 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/client";
+import { useSession } from "next-auth/react";
 import { getOnboardingState } from "@/lib/onboarding-store";
 
 const stripePromise = loadStripe(
@@ -93,22 +93,20 @@ function PaymentForm({ planAmount }: { planAmount: number }) {
 
 export default function PaymentPage() {
   const router = useRouter();
+  const { status } = useSession();
   const [clientSecret, setClientSecret] = useState("");
   const [planAmount, setPlanAmount] = useState(7600);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const init = async () => {
-      // Check auth
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        router.replace("/onboarding/signup?redirect=/onboarding/payment");
-        return;
-      }
+    // Wait until session is resolved
+    if (status === "loading") return;
+    if (status === "unauthenticated") {
+      router.replace("/onboarding/signup?redirect=/onboarding/payment");
+      return;
+    }
 
+    const init = async () => {
       const state = getOnboardingState();
       const amount = state.planAmount || 7600;
       setPlanAmount(amount);
@@ -137,7 +135,7 @@ export default function PaymentPage() {
       }
     };
     init();
-  }, [router]);
+  }, [router, status]);
 
   if (error) {
     return (

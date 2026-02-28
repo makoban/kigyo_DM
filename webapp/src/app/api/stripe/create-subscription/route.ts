@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe, PLANS } from "@/lib/stripe";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuth } from "@/lib/auth-helpers";
+import { queryOne, query } from "@/lib/db";
 import Stripe from "stripe";
 
 // Product/Price はテストモードで事前作成、または動的に取得
@@ -51,12 +52,10 @@ async function getOrCreatePrice(amount: number): Promise<string> {
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    let userId: string;
+    try {
+      userId = await requireAuth();
+    } catch {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
     }
 
@@ -72,32 +71,29 @@ export async function POST(req: NextRequest) {
     }
 
     // Get Stripe customer ID (profile may not exist for Google OAuth users)
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("stripe_customer_id, email")
-      .eq("id", user.id)
-      .single();
+    const profile = await queryOne<{ stripe_customer_id: string | null; email: string | null }>(
+      "SELECT stripe_customer_id, email FROM profiles WHERE id = $1",
+      [userId]
+    );
 
     let customerId = profile?.stripe_customer_id;
 
     if (!customerId) {
       // Create Stripe customer and upsert profile row so subsequent calls succeed
       const customer = await stripe.customers.create({
-        email: user.email || profile?.email || undefined,
-        metadata: { supabase_user_id: user.id },
+        email: profile?.email || undefined,
+        metadata: { supabase_user_id: userId },
       });
       customerId = customer.id;
 
-      await supabase
-        .from("profiles")
-        .upsert(
-          {
-            id: user.id,
-            email: user.email || profile?.email || null,
-            stripe_customer_id: customerId,
-          },
-          { onConflict: "id" }
-        );
+      await query(
+        `INSERT INTO profiles (id, email, stripe_customer_id)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (id) DO UPDATE SET
+           email = COALESCE(EXCLUDED.email, profiles.email),
+           stripe_customer_id = EXCLUDED.stripe_customer_id`,
+        [userId, profile?.email ?? null, customerId]
+      );
     }
 
     // Cancel any existing incomplete subscriptions to avoid duplicates
@@ -121,7 +117,7 @@ export async function POST(req: NextRequest) {
         save_default_payment_method: "on_subscription",
       },
       metadata: {
-        user_id: user.id,
+        user_id: userId,
         plan_id: plan.id,
       },
       expand: ["latest_invoice.payment_intent"],
@@ -139,13 +135,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Save subscription ID and plan amount to profile
-    await supabase
-      .from("profiles")
-      .update({
-        stripe_subscription_id: subscription.id,
-        plan_amount: planAmount,
-      })
-      .eq("id", user.id);
+    await query(
+      "UPDATE profiles SET stripe_subscription_id = $1, plan_amount = $2 WHERE id = $3",
+      [subscription.id, planAmount, userId]
+    );
 
     return NextResponse.json({
       subscriptionId: subscription.id,

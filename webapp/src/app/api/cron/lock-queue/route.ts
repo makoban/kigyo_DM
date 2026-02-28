@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/server";
+import { query } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
@@ -7,27 +7,24 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabase = await createServiceClient();
-
   // Lock tomorrow's pending items → confirmed
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowStr = tomorrow.toISOString().slice(0, 10);
 
-  const { data, error } = await supabase
-    .from("mailing_queue")
-    .update({ status: "confirmed" })
-    .eq("status", "pending")
-    .eq("scheduled_date", tomorrowStr)
-    .select("id");
+  try {
+    const result = await query(
+      "UPDATE mailing_queue SET status = 'confirmed' WHERE status = 'pending' AND scheduled_date = $1 RETURNING id",
+      [tomorrowStr]
+    );
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({
+      success: true,
+      lockedCount: result.rowCount ?? 0,
+      date: tomorrowStr,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  return NextResponse.json({
-    success: true,
-    lockedCount: data?.length || 0,
-    date: tomorrowStr,
-  });
 }

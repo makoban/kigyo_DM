@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe, PLANS } from "@/lib/stripe";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuth } from "@/lib/auth-helpers";
+import { queryOne, query } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    let userId: string;
+    try {
+      userId = await requireAuth();
+    } catch {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
     }
 
@@ -24,11 +23,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("stripe_subscription_id")
-      .eq("id", user.id)
-      .single();
+    const profile = await queryOne<{ stripe_subscription_id: string | null }>(
+      "SELECT stripe_subscription_id FROM profiles WHERE id = $1",
+      [userId]
+    );
 
     if (!profile?.stripe_subscription_id) {
       return NextResponse.json(
@@ -65,16 +63,16 @@ export async function POST(req: NextRequest) {
       ],
       proration_behavior: "none",
       metadata: {
-        user_id: user.id,
+        user_id: userId,
         plan_id: plan.id,
       },
     });
 
     // Update plan_amount in profile
-    await supabase
-      .from("profiles")
-      .update({ plan_amount: planAmount })
-      .eq("id", user.id);
+    await query(
+      "UPDATE profiles SET plan_amount = $1 WHERE id = $2",
+      [planAmount, userId]
+    );
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/server";
+import { query, queryOne } from "@/lib/db";
 import { UNIT_PRICE } from "@/lib/stripe";
 
 // 残高減算Cron: 毎日実行
@@ -10,14 +10,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabase = await createServiceClient();
-
   // 送付済み（sent）かつ残高未精算のアイテムを取得
-  const { data: undeducted } = await supabase
-    .from("mailing_queue")
-    .select("id, user_id, unit_price")
-    .eq("status", "sent")
-    .eq("balance_deducted", false);
+  const undeductedResult = await query(
+    "SELECT id, user_id, unit_price FROM mailing_queue WHERE status = 'sent' AND balance_deducted = false",
+    []
+  );
+  const undeducted = undeductedResult.rows as { id: number; user_id: string; unit_price: number }[];
 
   if (!undeducted || undeducted.length === 0) {
     return NextResponse.json({
@@ -42,11 +40,10 @@ export async function GET(req: NextRequest) {
   for (const [userId, items] of userItems) {
     try {
       // 現在の残高を取得
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("balance")
-        .eq("id", userId)
-        .single();
+      const profile = await queryOne<{ balance: number }>(
+        "SELECT balance FROM profiles WHERE id = $1",
+        [userId]
+      );
 
       if (!profile) {
         errors.push(`User ${userId}: profile not found`);
@@ -55,26 +52,25 @@ export async function GET(req: NextRequest) {
 
       // 残高から減算
       const newBalance = profile.balance - items.total;
-      await supabase
-        .from("profiles")
-        .update({ balance: newBalance })
-        .eq("id", userId);
+      await query(
+        "UPDATE profiles SET balance = $1 WHERE id = $2",
+        [newBalance, userId]
+      );
 
       // 精算済みマーク
-      await supabase
-        .from("mailing_queue")
-        .update({ balance_deducted: true })
-        .in("id", items.ids);
+      await query(
+        "UPDATE mailing_queue SET balance_deducted = true WHERE id = ANY($1)",
+        [items.ids]
+      );
 
       deductedCount += items.ids.length;
 
       // 残高不足 → 送付停止
       if (newBalance < UNIT_PRICE) {
-        await supabase
-          .from("subscriptions")
-          .update({ status: "paused" })
-          .eq("user_id", userId)
-          .eq("status", "active");
+        await query(
+          "UPDATE subscriptions SET status = 'paused' WHERE user_id = $1 AND status = 'active'",
+          [userId]
+        );
         pausedCount++;
       }
     } catch (error) {

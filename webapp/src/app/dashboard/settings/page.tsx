@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardTitle } from "@/components/ui/card";
-import { createClient } from "@/lib/supabase/client";
-import type { Profile, Subscription } from "@/lib/supabase/types";
+import type { Profile, Subscription } from "@/lib/types";
 
 const PLANS = [
   { id: "start", label: "スタート", amount: 3800, letters: 10, desc: "地方・お試し" },
@@ -31,36 +30,24 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const load = async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      const { data: subData } = await supabase
-        .from("subscriptions")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("status", "active")
-        .single();
-
-      if (profileData) {
-        setProfile(profileData);
-        setCompanyName(profileData.company_name || "");
-        setAddress(profileData.address || "");
-        setPhone(profileData.phone || "");
-        setContactEmail(profileData.contact_email || "");
-        setRepresentativeName(profileData.representative_name || "");
+      const res = await fetch("/api/dashboard/settings");
+      if (res.status === 401) {
+        window.location.href = "/onboarding/signup";
+        return;
       }
-      if (subData) {
-        setSub(subData);
-        setGreeting(subData.greeting_text || "");
+      const data = await res.json();
+
+      if (data.profile) {
+        setProfile(data.profile);
+        setCompanyName(data.profile.company_name || "");
+        setAddress(data.profile.address || "");
+        setPhone(data.profile.phone || "");
+        setContactEmail(data.profile.contact_email || "");
+        setRepresentativeName(data.profile.representative_name || "");
+      }
+      if (data.sub) {
+        setSub(data.sub);
+        setGreeting(data.sub.greeting_text || "");
       }
     };
     load();
@@ -69,33 +56,29 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setSaving(true);
     setMessage("");
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-
-    // Update profile
-    await supabase
-      .from("profiles")
-      .update({
-        company_name: companyName,
-        address,
-        phone,
-        contact_email: contactEmail,
-        representative_name: representativeName,
-      })
-      .eq("id", user.id);
-
-    // Update subscription greeting
-    if (sub) {
-      await supabase
-        .from("subscriptions")
-        .update({ greeting_text: greeting })
-        .eq("id", sub.id);
+    try {
+      const res = await fetch("/api/dashboard/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          company_name: companyName,
+          address,
+          phone,
+          contact_email: contactEmail,
+          representative_name: representativeName,
+          greeting_text: greeting,
+          subscription_id: sub?.id || null,
+        }),
+      });
+      if (res.ok) {
+        setMessage("保存しました");
+      } else {
+        const data = await res.json();
+        setMessage(data.error || "保存に失敗しました");
+      }
+    } catch {
+      setMessage("通信エラーが発生しました");
     }
-
-    setMessage("保存しました");
     setSaving(false);
     setTimeout(() => setMessage(""), 3000);
   };
@@ -110,7 +93,9 @@ export default function SettingsPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setProfile((prev) => prev ? { ...prev, plan_amount: newAmount } : prev);
+        setProfile((prev) =>
+          prev ? { ...prev, plan_amount: newAmount } : prev
+        );
         setMessage("プランを変更しました。翌月1日から反映されます。");
       } else {
         setMessage(data.error || "プラン変更に失敗しました");
@@ -124,20 +109,31 @@ export default function SettingsPage() {
 
   const handlePause = async () => {
     if (!sub) return;
-    const supabase = createClient();
-    const newStatus = sub.status === "active" ? "paused" : "active";
-    await supabase
-      .from("subscriptions")
-      .update({ status: newStatus })
-      .eq("id", sub.id);
-    setSub({ ...sub, status: newStatus });
+    try {
+      const res = await fetch("/api/dashboard/pause-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscription_id: sub.id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSub({ ...sub, status: data.status });
+      } else {
+        setMessage(data.error || "操作に失敗しました");
+        setTimeout(() => setMessage(""), 3000);
+      }
+    } catch {
+      setMessage("通信エラーが発生しました");
+      setTimeout(() => setMessage(""), 3000);
+    }
   };
 
   if (!profile) {
     return <div className="py-20 text-center text-gray-400">読み込み中...</div>;
   }
 
-  const currentPlan = PLANS.find((p) => p.amount === profile.plan_amount) || PLANS[1];
+  const currentPlan =
+    PLANS.find((p) => p.amount === profile.plan_amount) || PLANS[1];
 
   return (
     <div className="animate-fade-in-up max-w-2xl">
@@ -171,11 +167,18 @@ export default function SettingsPage() {
       <Card className="mb-6">
         <CardTitle>プラン</CardTitle>
         <p className="text-sm text-gray-500 mt-1">
-          現在: <span className="font-semibold text-navy-800">{currentPlan.label}</span>
-          （&yen;{currentPlan.amount.toLocaleString()}/月 ・ {currentPlan.letters}通）
+          現在:{" "}
+          <span className="font-semibold text-navy-800">
+            {currentPlan.label}
+          </span>
+          （&yen;{currentPlan.amount.toLocaleString()}/月 ・{" "}
+          {currentPlan.letters}通）
         </p>
         <p className="text-sm text-gray-500 mt-1">
-          残高: <span className="font-semibold text-gold-400">&yen;{profile.balance.toLocaleString()}</span>
+          残高:{" "}
+          <span className="font-semibold text-gold-400">
+            &yen;{profile.balance.toLocaleString()}
+          </span>
           （{Math.floor(profile.balance / 380)}通分）
         </p>
         <div className="grid grid-cols-2 gap-2 mt-4">
@@ -245,9 +248,7 @@ export default function SettingsPage() {
         />
       </Card>
 
-      {message && (
-        <p className="text-sm text-green-600 mb-4">{message}</p>
-      )}
+      {message && <p className="text-sm text-green-600 mb-4">{message}</p>}
 
       <Button onClick={handleSave} loading={saving} className="w-full">
         保存

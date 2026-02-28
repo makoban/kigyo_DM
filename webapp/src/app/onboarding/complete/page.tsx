@@ -27,6 +27,7 @@ function CompleteContent() {
             sender: state.sender,
             greetingText: state.greetingText,
             planAmount: state.planAmount,
+            shokenData: state.shokenData || null,
           }),
         });
 

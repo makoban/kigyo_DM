@@ -1,46 +1,42 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import { createClient } from "@/lib/supabase/server";
+import { requireAuth } from "@/lib/auth-helpers";
+import { queryOne, query } from "@/lib/db";
 
 export async function POST() {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    let userId: string;
+    try {
+      userId = await requireAuth();
+    } catch {
       return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
     }
 
     // Get or create Stripe customer
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("stripe_customer_id, email")
-      .eq("id", user.id)
-      .single();
+    const profile = await queryOne<{ stripe_customer_id: string | null; email: string | null }>(
+      "SELECT stripe_customer_id, email FROM profiles WHERE id = $1",
+      [userId]
+    );
 
     let customerId = profile?.stripe_customer_id;
 
     if (!customerId) {
       const customer = await stripe.customers.create({
-        email: user.email || profile?.email || undefined,
-        metadata: { supabase_user_id: user.id },
+        email: profile?.email || undefined,
+        metadata: { supabase_user_id: userId },
       });
       customerId = customer.id;
 
       // Use UPSERT so that if no profile row exists (e.g. Google OAuth users),
       // a new row is inserted instead of the UPDATE silently doing nothing.
-      await supabase
-        .from("profiles")
-        .upsert(
-          {
-            id: user.id,
-            email: user.email || profile?.email || null,
-            stripe_customer_id: customerId,
-          },
-          { onConflict: "id" }
-        );
+      await query(
+        `INSERT INTO profiles (id, email, stripe_customer_id)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (id) DO UPDATE SET
+           email = COALESCE(EXCLUDED.email, profiles.email),
+           stripe_customer_id = EXCLUDED.stripe_customer_id`,
+        [userId, profile?.email ?? null, customerId]
+      );
     }
 
     // Create SetupIntent

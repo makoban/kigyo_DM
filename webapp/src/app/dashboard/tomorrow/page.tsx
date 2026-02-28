@@ -1,68 +1,49 @@
-"use client";
-
-import { useEffect, useState } from "react";
+import { redirect } from "next/navigation";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/client";
-import type { MailingQueueItem, Corporation } from "@/lib/supabase/types";
+import { auth } from "@/lib/auth";
+import { query } from "@/lib/db";
+import { CancelButton } from "@/components/dashboard/cancel-button";
+import type { Corporation } from "@/lib/types";
 
-type QueueWithCorp = MailingQueueItem & { corporations: Corporation };
+interface QueueRow {
+  id: number;
+  status: "pending" | "confirmed" | "ready_to_send" | "sent" | "cancelled";
+  scheduled_date: string;
+  corporation: Corporation;
+}
 
-export default function TomorrowPage() {
-  const [items, setItems] = useState<QueueWithCorp[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isLocked, setIsLocked] = useState(false);
+export default async function TomorrowPage() {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/onboarding/signup");
+  const userId = session.user.id;
 
-  useEffect(() => {
-    load();
-  }, []);
+  // Compute tomorrow's date on the server
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().slice(0, 10);
 
-  const load = async () => {
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
+  // Check if locked (after 16:30 in server local time)
+  const now = new Date();
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  const isLocked = hours > 16 || (hours === 16 && minutes >= 30);
 
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+  // Fetch tomorrow's queue with corporation data via JSON aggregation
+  const result = await query<QueueRow>(
+    `SELECT mq.id,
+            mq.status,
+            mq.scheduled_date,
+            row_to_json(c.*) AS corporation
+       FROM mailing_queue mq
+       JOIN corporations c ON mq.corporation_id = c.id
+      WHERE mq.user_id = $1
+        AND mq.scheduled_date = $2
+        AND mq.status = ANY($3)
+      ORDER BY mq.created_at ASC`,
+    [userId, tomorrowStr, ["pending", "confirmed"]]
+  );
 
-    // Check if locked (after 16:30)
-    const now = new Date();
-    const hours = now.getHours();
-    const minutes = now.getMinutes();
-    setIsLocked(hours > 16 || (hours === 16 && minutes >= 30));
-
-    const { data } = await supabase
-      .from("mailing_queue")
-      .select("*, corporations(*)")
-      .eq("user_id", user.id)
-      .eq("scheduled_date", tomorrowStr)
-      .in("status", ["pending", "confirmed"])
-      .order("created_at", { ascending: true });
-
-    setItems((data as QueueWithCorp[]) || []);
-    setLoading(false);
-  };
-
-  const handleCancel = async (id: number) => {
-    if (isLocked) return;
-    const supabase = createClient();
-    await supabase
-      .from("mailing_queue")
-      .update({
-        status: "cancelled",
-        cancelled_at: new Date().toISOString(),
-        cancel_reason: "ユーザーキャンセル",
-      })
-      .eq("id", id);
-    setItems((prev) => prev.filter((i) => i.id !== id));
-  };
-
-  if (loading) {
-    return <div className="py-20 text-center text-gray-400">読み込み中...</div>;
-  }
+  const items = result.rows;
 
   return (
     <div className="animate-fade-in-up">
@@ -88,26 +69,19 @@ export default function TomorrowPage() {
             <Card key={item.id} className="flex items-center justify-between">
               <div className="min-w-0">
                 <p className="font-semibold text-sm text-navy-800 truncate">
-                  {item.corporations?.company_name || "不明"}
+                  {item.corporation?.company_name || "不明"}
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  {item.corporations?.prefecture}{" "}
-                  {item.corporations?.city}{" "}
-                  {item.corporations?.street_address}
+                  {item.corporation?.prefecture}{" "}
+                  {item.corporation?.city}{" "}
+                  {item.corporation?.street_address}
                 </p>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  法人番号: {item.corporations?.corporate_number}
+                  法人番号: {item.corporation?.corporate_number}
                 </p>
               </div>
               {!isLocked && item.status === "pending" && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleCancel(item.id)}
-                  className="text-red-500 hover:text-red-600 shrink-0 ml-2"
-                >
-                  取消
-                </Button>
+                <CancelButton itemId={item.id} />
               )}
               {item.status === "confirmed" && (
                 <span className="text-xs text-gold-400 shrink-0 ml-2">

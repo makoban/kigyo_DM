@@ -1,5 +1,4 @@
 import iconv from "iconv-lite";
-import { createServiceClient } from "@/lib/supabase/server";
 
 // CSV columns (30 columns, Shift-JIS / CP932)
 // [0] 連番, [1] 法人番号, [2] 処理区分, [3] 訂正区分, [4] 更新年月日,

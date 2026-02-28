@@ -28,6 +28,7 @@ export interface Subscription {
   monthly_budget_limit: number;
   max_letters_per_month: number;
   greeting_text: string | null;
+  shoken_data: Record<string, unknown> | null;
   status: "active" | "paused" | "cancelled";
   created_at: string;
   updated_at: string;

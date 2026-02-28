@@ -2,48 +2,35 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { signIn, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { createClient } from "@/lib/supabase/client";
 
 function SignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/onboarding/budget";
 
+  const { data: session, status } = useSession();
+
   const [mode, setMode] = useState<"signup" | "login">("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [checking, setChecking] = useState(true);
-
-  const supabase = createClient();
 
   // Skip signup if already authenticated
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        router.replace(redirectTo);
-      } else {
-        setChecking(false);
-      }
-    });
-  }, [supabase, router, redirectTo]);
+    if (status === "authenticated" && session?.user) {
+      router.replace(redirectTo);
+    }
+  }, [status, session, router, redirectTo]);
 
   const handleGoogleAuth = async () => {
     setLoading(true);
     setError("");
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
-      },
-    });
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-    }
+    await signIn("google", { callbackUrl: redirectTo });
+    // signIn redirects, so no further handling needed
   };
 
   const handleEmailAuth = async () => {
@@ -57,35 +44,55 @@ function SignupContent() {
     }
 
     if (mode === "signup") {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
-        },
+      // 1. Create account via API
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
       });
-      if (error) {
-        setError(error.message);
-      } else {
-        // For email confirmation flow
-        setError("");
-        router.push(redirectTo);
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "登録に失敗しました");
+        setLoading(false);
+        return;
       }
+
+      // 2. Sign in after successful registration
+      const result = await signIn("credentials", {
+        email: email.trim(),
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("登録は完了しましたが、ログインに失敗しました。ログインタブからお試しください。");
+        setLoading(false);
+        return;
+      }
+
+      router.push(redirectTo);
     } else {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
+      // Login
+      const result = await signIn("credentials", {
+        email: email.trim(),
         password,
+        redirect: false,
       });
-      if (error) {
-        setError(error.message);
-      } else {
-        router.push(redirectTo);
+
+      if (result?.error) {
+        setError("メールアドレスまたはパスワードが正しくありません");
+        setLoading(false);
+        return;
       }
+
+      router.push(redirectTo);
     }
+
     setLoading(false);
   };
 
-  if (checking) {
+  if (status === "loading") {
     return (
       <div className="py-20 text-center text-gray-400">読み込み中...</div>
     );

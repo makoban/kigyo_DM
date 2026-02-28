@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import { createServiceClient } from "@/lib/supabase/server";
+import { queryOne, query } from "@/lib/db";
 import Stripe from "stripe";
 
 export async function POST(req: NextRequest) {
@@ -26,8 +26,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
-  const supabase = await createServiceClient();
-
   switch (event.type) {
     // チャージ成功 → 残高加算
     case "invoice.paid": {
@@ -40,45 +38,41 @@ export async function POST(req: NextRequest) {
       if (!customerId) break;
 
       // Find user by stripe_customer_id
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id, balance")
-        .eq("stripe_customer_id", customerId)
-        .single();
+      const profile = await queryOne<{ id: string; balance: number }>(
+        "SELECT id, balance FROM profiles WHERE stripe_customer_id = $1",
+        [customerId]
+      );
 
       if (!profile) break;
 
       const chargeAmount = invoice.amount_paid;
 
       // 残高加算
-      await supabase
-        .from("profiles")
-        .update({ balance: profile.balance + chargeAmount })
-        .eq("id", profile.id);
+      await query(
+        "UPDATE profiles SET balance = $1 WHERE id = $2",
+        [profile.balance + chargeAmount, profile.id]
+      );
 
       // monthly_usage にチャージ記録
       const now = new Date();
       const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
-      await supabase.from("monthly_usage").upsert(
-        {
-          user_id: profile.id,
-          year_month: yearMonth,
-          total_sent: 0,
-          total_amount: chargeAmount,
-          stripe_invoice_id: invoice.id,
-          payment_status: "charged",
-        },
-        { onConflict: "user_id,year_month" }
+      await query(
+        `INSERT INTO monthly_usage (user_id, year_month, total_sent, total_amount, stripe_invoice_id, payment_status)
+         VALUES ($1, $2, 0, $3, $4, 'charged')
+         ON CONFLICT (user_id, year_month) DO UPDATE SET
+           total_amount = EXCLUDED.total_amount,
+           stripe_invoice_id = EXCLUDED.stripe_invoice_id,
+           payment_status = EXCLUDED.payment_status`,
+        [profile.id, yearMonth, chargeAmount, invoice.id]
       );
 
       // 停止中のサブスクリプションを再開
       if (chargeAmount >= 380) {
-        await supabase
-          .from("subscriptions")
-          .update({ status: "active" })
-          .eq("user_id", profile.id)
-          .eq("status", "paused");
+        await query(
+          "UPDATE subscriptions SET status = 'active' WHERE user_id = $1 AND status = 'paused'",
+          [profile.id]
+        );
       }
 
       break;
@@ -94,20 +88,18 @@ export async function POST(req: NextRequest) {
 
       if (!customerId) break;
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("stripe_customer_id", customerId)
-        .single();
+      const profile = await queryOne<{ id: string }>(
+        "SELECT id FROM profiles WHERE stripe_customer_id = $1",
+        [customerId]
+      );
 
       if (!profile) break;
 
       // サブスクリプションを一時停止
-      await supabase
-        .from("subscriptions")
-        .update({ status: "paused" })
-        .eq("user_id", profile.id)
-        .eq("status", "active");
+      await query(
+        "UPDATE subscriptions SET status = 'paused' WHERE user_id = $1 AND status = 'active'",
+        [profile.id]
+      );
 
       // TODO: Send failure notification email
       break;
@@ -123,26 +115,24 @@ export async function POST(req: NextRequest) {
 
       if (!customerId) break;
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("stripe_customer_id", customerId)
-        .single();
+      const profile = await queryOne<{ id: string }>(
+        "SELECT id FROM profiles WHERE stripe_customer_id = $1",
+        [customerId]
+      );
 
       if (!profile) break;
 
       // サブスクリプションをキャンセル状態に
-      await supabase
-        .from("subscriptions")
-        .update({ status: "cancelled" })
-        .eq("user_id", profile.id)
-        .in("status", ["active", "paused"]);
+      await query(
+        "UPDATE subscriptions SET status = 'cancelled' WHERE user_id = $1 AND status = ANY($2)",
+        [profile.id, ["active", "paused"]]
+      );
 
       // stripe_subscription_id をクリア
-      await supabase
-        .from("profiles")
-        .update({ stripe_subscription_id: null })
-        .eq("id", profile.id);
+      await query(
+        "UPDATE profiles SET stripe_subscription_id = NULL WHERE id = $1",
+        [profile.id]
+      );
 
       // 残高は30日間維持（失効は別Cronで処理）
       break;

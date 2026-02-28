@@ -1,9 +1,8 @@
-"use client";
-
-import { useEffect, useState } from "react";
+import { redirect } from "next/navigation";
 import { Card } from "@/components/ui/card";
-import { createClient } from "@/lib/supabase/client";
-import type { MonthlyUsage } from "@/lib/supabase/types";
+import { auth } from "@/lib/auth";
+import { queryOne, query } from "@/lib/db";
+import type { MonthlyUsage } from "@/lib/types";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   pending: { label: "未請求", color: "bg-gray-100 text-gray-600" },
@@ -13,42 +12,24 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   failed: { label: "支払失敗", color: "bg-red-100 text-red-700" },
 };
 
-export default function BillingPage() {
-  const [usages, setUsages] = useState<MonthlyUsage[]>([]);
-  const [balance, setBalance] = useState(0);
-  const [loading, setLoading] = useState(true);
+export default async function BillingPage() {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/onboarding/signup");
+  const userId = session.user.id;
 
-  useEffect(() => {
-    const load = async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+  const [profile, usagesResult] = await Promise.all([
+    queryOne<{ balance: number }>(
+      "SELECT balance FROM profiles WHERE id = $1",
+      [userId]
+    ),
+    query<MonthlyUsage>(
+      "SELECT * FROM monthly_usage WHERE user_id = $1 ORDER BY year_month DESC",
+      [userId]
+    ),
+  ]);
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("balance")
-        .eq("id", user.id)
-        .single();
-
-      setBalance(profile?.balance || 0);
-
-      const { data } = await supabase
-        .from("monthly_usage")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("year_month", { ascending: false });
-
-      setUsages(data || []);
-      setLoading(false);
-    };
-    load();
-  }, []);
-
-  if (loading) {
-    return <div className="py-20 text-center text-gray-400">読み込み中...</div>;
-  }
+  const balance = profile?.balance ?? 0;
+  const usages = usagesResult.rows;
 
   return (
     <div className="animate-fade-in-up">
@@ -76,9 +57,11 @@ export default function BillingPage() {
       ) : (
         <div className="space-y-3">
           {usages.map((usage) => {
-            const status = STATUS_LABELS[usage.payment_status] ||
-              STATUS_LABELS.pending;
-            const isCharge = usage.payment_status === "charged" || usage.payment_status === "paid";
+            const status =
+              STATUS_LABELS[usage.payment_status] || STATUS_LABELS.pending;
+            const isCharge =
+              usage.payment_status === "charged" ||
+              usage.payment_status === "paid";
             return (
               <Card key={usage.id} className="py-4 px-5">
                 <div className="flex items-center justify-between">
@@ -87,12 +70,19 @@ export default function BillingPage() {
                       {usage.year_month}
                     </p>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      {isCharge ? "月額チャージ" : `${usage.total_sent}通 投函`}
+                      {isCharge
+                        ? "月額チャージ"
+                        : `${usage.total_sent}通 投函`}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className={`font-semibold ${isCharge ? "text-blue-600" : "text-navy-800"}`}>
-                      {isCharge ? "+" : "-"}&yen;{usage.total_amount.toLocaleString()}
+                    <p
+                      className={`font-semibold ${
+                        isCharge ? "text-blue-600" : "text-navy-800"
+                      }`}
+                    >
+                      {isCharge ? "+" : "-"}&yen;
+                      {usage.total_amount.toLocaleString()}
                     </p>
                     <span
                       className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs ${status.color}`}

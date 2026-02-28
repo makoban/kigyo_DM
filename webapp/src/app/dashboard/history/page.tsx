@@ -3,17 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/client";
-import type { Corporation } from "@/lib/supabase/types";
-
-interface HistoryItem {
-  id: number;
-  status: string;
-  scheduled_date: string;
-  sent_at: string | null;
-  unit_price: number;
-  corporations: Corporation;
-}
+import type { HistoryItem } from "@/app/api/dashboard/history/route";
 
 export default function HistoryPage() {
   const [items, setItems] = useState<HistoryItem[]>([]);
@@ -24,27 +14,26 @@ export default function HistoryPage() {
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monthFilter]);
 
   const load = async () => {
     setLoading(true);
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data } = await supabase
-      .from("mailing_queue")
-      .select("id, status, scheduled_date, sent_at, unit_price, corporations(*)")
-      .eq("user_id", user.id)
-      .eq("status", "sent")
-      .gte("scheduled_date", `${monthFilter}-01`)
-      .lte("scheduled_date", `${monthFilter}-31`)
-      .order("scheduled_date", { ascending: false });
-
-    setItems((data as unknown as HistoryItem[]) || []);
-    setLoading(false);
+    try {
+      const res = await fetch(
+        `/api/dashboard/history?month=${encodeURIComponent(monthFilter)}`
+      );
+      if (res.status === 401) {
+        window.location.href = "/onboarding/signup";
+        return;
+      }
+      const data = await res.json();
+      setItems(data.items || []);
+    } catch {
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleExport = () => {
