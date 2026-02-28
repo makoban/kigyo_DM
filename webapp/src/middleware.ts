@@ -1,14 +1,17 @@
-import { auth } from "@/lib/auth";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
-export default auth((req) => {
-  if (!req.auth && req.nextUrl.pathname.startsWith("/dashboard")) {
+export function middleware(req: NextRequest) {
+  const sessionToken =
+    req.cookies.get("authjs.session-token") ||
+    req.cookies.get("__Secure-authjs.session-token");
+
+  if (!sessionToken) {
     const url = req.nextUrl.clone();
     url.pathname = "/onboarding/signup";
     url.searchParams.set("redirect", req.nextUrl.pathname);
     return NextResponse.redirect(url);
   }
-});
+}
 
 export const config = {
   matcher: ["/dashboard/:path*"],
