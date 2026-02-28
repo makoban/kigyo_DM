@@ -4,7 +4,6 @@ import { query } from "@/lib/db";
 export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
-    const dateStr = url.searchParams.get("date") || new Date().toISOString().slice(0, 10);
     const statusFilter = url.searchParams.get("status");
 
     const statusValues = statusFilter
@@ -18,6 +17,7 @@ export async function GET(req: NextRequest) {
         mq.scheduled_date,
         mq.unit_price,
         mq.created_at,
+        mq.sent_at,
         json_build_object(
           'company_name', c.company_name,
           'company_name_kana', c.company_name_kana,
@@ -47,16 +47,14 @@ export async function GET(req: NextRequest) {
       JOIN corporations c ON mq.corporation_id = c.id
       JOIN subscriptions s ON mq.subscription_id = s.id
       JOIN profiles p ON mq.user_id = p.id
-      WHERE mq.scheduled_date = $1
-        AND mq.status = ANY($2)
-      ORDER BY mq.id ASC`,
-      [dateStr, statusValues]
+      WHERE mq.status = ANY($1)
+      ORDER BY mq.id DESC`,
+      [statusValues]
     );
 
     return NextResponse.json({
       items: result.rows,
       totalCount: result.rows.length,
-      date: dateStr,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch queue";

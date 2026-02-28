@@ -9,6 +9,7 @@ interface QueueItem {
   scheduled_date: string;
   unit_price: number;
   created_at: string;
+  sent_at: string | null;
   corporations: {
     company_name: string;
     company_name_kana: string | null;
@@ -45,8 +46,13 @@ function entityLabel(type: string | null): string {
   return "";
 }
 
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export default function AdminPage() {
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [items, setItems] = useState<QueueItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [sentIds, setSentIds] = useState<Set<number>>(new Set());
@@ -54,12 +60,12 @@ export default function AdminPage() {
   const [marking, setMarking] = useState(false);
   const [showSent, setShowSent] = useState(false);
 
-  const fetchQueue = useCallback(async (d: string, includeSent: boolean) => {
+  const fetchQueue = useCallback(async (includeSent: boolean) => {
     setLoading(true);
     try {
       const url = includeSent
-        ? `/api/admin/queue?date=${d}&status=sent`
-        : `/api/admin/queue?date=${d}`;
+        ? `/api/admin/queue?status=sent`
+        : `/api/admin/queue`;
       const res = await fetch(url);
       const data = await res.json();
       if (data.items) setItems(data.items);
@@ -72,8 +78,8 @@ export default function AdminPage() {
 
   useEffect(() => {
     setSentIds(new Set());
-    fetchQueue(date, showSent);
-  }, [date, showSent, fetchQueue]);
+    fetchQueue(showSent);
+  }, [showSent, fetchQueue]);
 
   const markSent = async (ids: number[]) => {
     setMarking(true);
@@ -115,7 +121,7 @@ export default function AdminPage() {
 
   return (
     <>
-      {/* Print overlay (hidden on screen, shown when printing) */}
+      {/* Print overlay */}
       {printItem && (
         <div
           id="print-overlay"
@@ -152,7 +158,6 @@ export default function AdminPage() {
               areaLabel={printItem.subscriptions?.area_label || ""}
               shokenData={printItem.subscriptions?.shoken_data as never}
             />
-            {/* Close button (screen only) */}
             <div style={{ textAlign: "center", padding: "16px" }} className="no-print">
               <button
                 onClick={() => setPrintItem(null)}
@@ -177,29 +182,17 @@ export default function AdminPage() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <h1 style={{ fontSize: "20px", fontWeight: 700, color: "#0d1b2a", margin: 0, fontFamily: "'Noto Serif JP', serif" }}>
-            投函一覧
+            {showSent ? "送付済み一覧" : "投函一覧"}
           </h1>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            style={{
-              border: "1px solid #d1d5db",
-              borderRadius: "6px",
-              padding: "6px 10px",
-              fontSize: "14px",
-              color: "#0d1b2a",
-            }}
-          />
           <span style={{
-            background: "#c9a84c",
+            background: showSent ? "#22c55e" : "#c9a84c",
             color: "white",
             borderRadius: "12px",
             padding: "2px 12px",
             fontSize: "13px",
             fontWeight: 600,
           }}>
-            {loading ? "..." : `${pendingItems.length}件`}
+            {loading ? "..." : `${items.length}件`}
           </span>
         </div>
 
@@ -258,7 +251,7 @@ export default function AdminPage() {
         }}>
           <p style={{ fontSize: "40px", margin: "0 0 12px 0" }}>&#128235;</p>
           <p style={{ color: "#64748b", fontSize: "14px" }}>
-            {showSent ? "この日の送付済みDMはありません" : "この日の投函予定はありません"}
+            {showSent ? "送付済みのDMはありません" : "投函予定のDMはありません"}
           </p>
         </div>
       )}
@@ -323,7 +316,7 @@ export default function AdminPage() {
                 </p>
               </div>
 
-              {/* Middle: Sender info */}
+              {/* Middle: Sender + dates */}
               <div style={{ flex: "0 1 200px" }}>
                 <p style={{ fontSize: "10px", color: "#94a3b8", margin: "0 0 2px 0" }}>送り主</p>
                 <p style={{ fontSize: "13px", fontWeight: 600, color: "#0d1b2a", margin: 0 }}>
@@ -334,8 +327,9 @@ export default function AdminPage() {
                     {prof.representative_name}
                   </p>
                 )}
-                <p style={{ fontSize: "10px", color: "#94a3b8", margin: "2px 0 0 0" }}>
+                <p style={{ fontSize: "10px", color: "#94a3b8", margin: "4px 0 0 0" }}>
                   {sub?.area_label || ""}
+                  {item.scheduled_date && ` | 予定: ${formatDate(item.scheduled_date)}`}
                 </p>
               </div>
 
