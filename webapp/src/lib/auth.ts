@@ -60,10 +60,28 @@ const providers = [
     }),
 ];
 
+// Store last error for debug endpoint
+let lastAuthError: string | null = null;
+export function getLastAuthError() { return lastAuthError; }
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   debug: true,
   trustHost: true,
   providers,
+
+  logger: {
+    error(error) {
+      const msg = error instanceof Error ? error.message + "\n" + error.stack : String(error);
+      lastAuthError = msg;
+      console.error("[NextAuth Error]", msg);
+    },
+    warn(code) {
+      console.warn("[NextAuth Warn]", code);
+    },
+    debug(message, metadata) {
+      console.log("[NextAuth Debug]", message, metadata);
+    },
+  },
 
   session: {
     strategy: "jwt",
