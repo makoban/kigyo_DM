@@ -6,13 +6,23 @@ export function middleware(req: NextRequest) {
     req.cookies.get("__Secure-authjs.session-token");
 
   if (!sessionToken) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/onboarding/signup";
-    url.searchParams.set("redirect", req.nextUrl.pathname);
-    return NextResponse.redirect(url);
+    const path = req.nextUrl.pathname;
+
+    if (path.startsWith("/dashboard")) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/onboarding/signup";
+      url.searchParams.set("redirect", path);
+      return NextResponse.redirect(url);
+    }
+
+    if (path.startsWith("/admin") && path !== "/admin/login") {
+      const url = req.nextUrl.clone();
+      url.pathname = "/admin/login";
+      return NextResponse.redirect(url);
+    }
   }
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/dashboard/:path*", "/admin/:path*"],
 };

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import AdminHeaderActions from "@/components/admin-header-actions";
 
 export const metadata: Metadata = {
   title: "管理画面 | 起業サーチDM",
@@ -34,14 +35,17 @@ export default function AdminLayout({
           </span>
           <span style={{ color: "#94a3b8", fontSize: "13px" }}>管理画面</span>
         </div>
-        <a
-          href="https://kigyo-dm.bantex.jp/"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: "#64748b", fontSize: "12px", textDecoration: "none" }}
-        >
-          LP →
-        </a>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <AdminHeaderActions />
+          <a
+            href="https://kigyo-dm.bantex.jp/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "#64748b", fontSize: "12px", textDecoration: "none" }}
+          >
+            LP →
+          </a>
+        </div>
       </div>
       <div id="admin-main" style={{
         background: "#f8fafc",
