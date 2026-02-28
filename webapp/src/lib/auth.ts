@@ -15,13 +15,14 @@ declare module "next-auth" {
   }
 }
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
-  providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-    Credentials({
+const providers = [
+  ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+    ? [Google({
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      })]
+    : []),
+  Credentials({
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
@@ -56,7 +57,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return { id: user.id, email: user.email };
       },
     }),
-  ],
+];
+
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  providers,
 
   session: {
     strategy: "jwt",
