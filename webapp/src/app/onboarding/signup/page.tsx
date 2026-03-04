@@ -13,7 +13,9 @@ function SignupContent() {
 
   const { data: session, status } = useSession();
 
-  const [mode, setMode] = useState<"signup" | "login">("signup");
+  const [mode, setMode] = useState<"signup" | "login">(
+    searchParams.get("mode") === "login" ? "login" : "signup"
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
