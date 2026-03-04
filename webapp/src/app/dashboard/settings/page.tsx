@@ -248,6 +248,29 @@ export default function SettingsPage() {
         />
       </Card>
 
+      {/* Shoken report JPG preview */}
+      {sub && (
+        <Card className="mb-6">
+          <CardTitle>商圏レポート JPG</CardTitle>
+          {sub.shoken_jpg_url ? (
+            <div className="mt-3">
+              <img
+                src={sub.shoken_jpg_url}
+                alt="商圏レポート"
+                className="w-full border border-gray-200 rounded-lg"
+              />
+              <p className="text-xs text-gray-400 mt-2">
+                設定を変更して保存すると、次回バッチ時に自動で再生成されます
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400 mt-3">
+              商圏レポートJPGは未生成です。次回のバッチ処理で自動生成されます。
+            </p>
+          )}
+        </Card>
+      )}
+
       {message && <p className="text-sm text-green-600 mb-4">{message}</p>}
 
       <Button onClick={handleSave} loading={saving} className="w-full">

@@ -77,6 +77,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Invalidate pending greeting JPGs (sender info or greeting changed)
+    await query(
+      `UPDATE mailing_queue
+          SET greeting_jpg_url = NULL
+        WHERE user_id = $1
+          AND status IN ('pending', 'confirmed')`,
+      [userId]
+    );
+
     return NextResponse.json({ success: true });
   } catch (err) {
     if (err instanceof Error && err.message === "UNAUTHORIZED") {

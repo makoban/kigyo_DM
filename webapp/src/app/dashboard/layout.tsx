@@ -64,8 +64,8 @@ export default function DashboardLayout({
 
       <div className="max-w-6xl mx-auto flex">
         {/* Sidebar - desktop */}
-        <aside className="hidden md:block w-56 min-h-[calc(100vh-52px)] border-r border-gray-200 bg-white p-4">
-          <nav className="space-y-1">
+        <aside className="hidden md:flex md:flex-col w-56 min-h-[calc(100vh-52px)] border-r border-gray-200 bg-white p-4">
+          <nav className="space-y-1 flex-1">
             {NAV_ITEMS.map((item) => {
               const isActive =
                 item.path === "/dashboard"
@@ -87,6 +87,7 @@ export default function DashboardLayout({
               );
             })}
           </nav>
+          <p className="text-[10px] text-gray-300 text-center mt-4">v1.1.0</p>
         </aside>
 
         {/* Main content */}

@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
         mq.unit_price,
         mq.created_at,
         mq.sent_at,
+        mq.greeting_jpg_url,
         json_build_object(
           'company_name', c.company_name,
           'company_name_kana', c.company_name_kana,
@@ -32,7 +33,8 @@ export async function GET(req: NextRequest) {
         json_build_object(
           'greeting_text', s.greeting_text,
           'area_label', s.area_label,
-          'shoken_data', s.shoken_data
+          'shoken_data', s.shoken_data,
+          'shoken_jpg_url', s.shoken_jpg_url
         ) AS subscriptions,
         json_build_object(
           'company_name', p.company_name,

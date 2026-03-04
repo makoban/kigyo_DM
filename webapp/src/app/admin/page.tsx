@@ -10,6 +10,7 @@ interface QueueItem {
   unit_price: number;
   created_at: string;
   sent_at: string | null;
+  greeting_jpg_url: string | null;
   corporations: {
     company_name: string;
     company_name_kana: string | null;
@@ -25,6 +26,7 @@ interface QueueItem {
     greeting_text: string | null;
     area_label: string;
     shoken_data: Record<string, unknown> | null;
+    shoken_jpg_url: string | null;
   } | null;
   profiles: {
     company_name: string | null;
@@ -121,7 +123,7 @@ export default function AdminPage() {
 
   return (
     <>
-      {/* Print overlay */}
+      {/* Print overlay — JPG images if available, fallback to React component */}
       {printItem && (
         <div
           id="print-overlay"
@@ -137,28 +139,81 @@ export default function AdminPage() {
           }}
         >
           <div>
-            <CombinedA4
-              corporation={{
-                company_name: printItem.corporations?.company_name || "不明",
-                postal_code: printItem.corporations?.postal_code || null,
-                prefecture: printItem.corporations?.prefecture || null,
-                city: printItem.corporations?.city || null,
-                street_address: printItem.corporations?.street_address || null,
-              }}
-              sender={{
-                company_name: printItem.profiles?.company_name || null,
-                representative_name: printItem.profiles?.representative_name || null,
-                postal_code: printItem.profiles?.postal_code || null,
-                address: printItem.profiles?.address || null,
-                phone: printItem.profiles?.phone || null,
-                contact_email: printItem.profiles?.contact_email || null,
-                company_url: printItem.profiles?.company_url || null,
-              }}
-              greetingText={printItem.subscriptions?.greeting_text || ""}
-              areaLabel={printItem.subscriptions?.area_label || ""}
-              shokenData={printItem.subscriptions?.shoken_data as never}
-            />
-            <div style={{ textAlign: "center", padding: "16px" }} className="no-print">
+            {printItem.greeting_jpg_url ? (
+              <img
+                src={printItem.greeting_jpg_url}
+                alt="挨拶文"
+                style={{ width: "210mm", height: "auto", display: "block" }}
+              />
+            ) : (
+              <CombinedA4
+                corporation={{
+                  company_name: printItem.corporations?.company_name || "不明",
+                  postal_code: printItem.corporations?.postal_code || null,
+                  prefecture: printItem.corporations?.prefecture || null,
+                  city: printItem.corporations?.city || null,
+                  street_address: printItem.corporations?.street_address || null,
+                }}
+                sender={{
+                  company_name: printItem.profiles?.company_name || null,
+                  representative_name: printItem.profiles?.representative_name || null,
+                  postal_code: printItem.profiles?.postal_code || null,
+                  address: printItem.profiles?.address || null,
+                  phone: printItem.profiles?.phone || null,
+                  contact_email: printItem.profiles?.contact_email || null,
+                  company_url: printItem.profiles?.company_url || null,
+                }}
+                greetingText={printItem.subscriptions?.greeting_text || ""}
+                areaLabel={printItem.subscriptions?.area_label || ""}
+                shokenData={printItem.subscriptions?.shoken_data as never}
+              />
+            )}
+            {printItem.subscriptions?.shoken_jpg_url && (
+              <img
+                src={printItem.subscriptions.shoken_jpg_url}
+                alt="商圏レポート"
+                style={{ width: "210mm", height: "auto", display: "block", marginTop: "8px" }}
+              />
+            )}
+            <div style={{ textAlign: "center", padding: "16px", display: "flex", gap: "8px", justifyContent: "center" }} className="no-print">
+              {printItem.greeting_jpg_url && (
+                <a
+                  href={printItem.greeting_jpg_url}
+                  download={`greeting_${printItem.id}.jpg`}
+                  style={{
+                    background: "#c9a84c",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "8px 16px",
+                    cursor: "pointer",
+                    fontSize: "13px",
+                    textDecoration: "none",
+                    fontWeight: 600,
+                  }}
+                >
+                  DL: 挨拶文
+                </a>
+              )}
+              {printItem.subscriptions?.shoken_jpg_url && (
+                <a
+                  href={printItem.subscriptions.shoken_jpg_url}
+                  download={`shoken_${printItem.id}.jpg`}
+                  style={{
+                    background: "#c9a84c",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "8px 16px",
+                    cursor: "pointer",
+                    fontSize: "13px",
+                    textDecoration: "none",
+                    fontWeight: 600,
+                  }}
+                >
+                  DL: 商圏レポート
+                </a>
+              )}
               <button
                 onClick={() => setPrintItem(null)}
                 style={{
@@ -184,6 +239,7 @@ export default function AdminPage() {
           <h1 style={{ fontSize: "20px", fontWeight: 700, color: "#0d1b2a", margin: 0, fontFamily: "'Noto Serif JP', serif" }}>
             {showSent ? "送付済み一覧" : "投函一覧"}
           </h1>
+          <span style={{ fontSize: "10px", color: "#aaa" }}>v1.1.0</span>
           <span style={{
             background: showSent ? "#22c55e" : "#c9a84c",
             color: "white",
@@ -331,6 +387,26 @@ export default function AdminPage() {
                   {sub?.area_label || ""}
                   {item.scheduled_date && ` | 予定: ${formatDate(item.scheduled_date)}`}
                 </p>
+                <div style={{ display: "flex", gap: "4px", marginTop: "4px" }}>
+                  <span style={{
+                    fontSize: "9px",
+                    padding: "1px 6px",
+                    borderRadius: "3px",
+                    background: item.greeting_jpg_url ? "#dcfce7" : "#fef3c7",
+                    color: item.greeting_jpg_url ? "#16a34a" : "#92400e",
+                  }}>
+                    {item.greeting_jpg_url ? "JPG" : "未生成"}
+                  </span>
+                  <span style={{
+                    fontSize: "9px",
+                    padding: "1px 6px",
+                    borderRadius: "3px",
+                    background: sub?.shoken_jpg_url ? "#dcfce7" : "#fef3c7",
+                    color: sub?.shoken_jpg_url ? "#16a34a" : "#92400e",
+                  }}>
+                    {sub?.shoken_jpg_url ? "商圏JPG" : "商圏未生成"}
+                  </span>
+                </div>
               </div>
 
               {/* Right: Actions */}

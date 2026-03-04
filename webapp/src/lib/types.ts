@@ -29,6 +29,7 @@ export interface Subscription {
   max_letters_per_month: number;
   greeting_text: string | null;
   shoken_data: Record<string, unknown> | null;
+  shoken_jpg_url: string | null;
   status: "active" | "paused" | "cancelled";
   created_at: string;
   updated_at: string;
@@ -65,6 +66,7 @@ export interface MailingQueueItem {
   cancel_reason: string | null;
   unit_price: number;
   balance_deducted: boolean;
+  greeting_jpg_url: string | null;
   created_at: string;
   updated_at: string;
   // Joined
