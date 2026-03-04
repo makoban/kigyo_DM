@@ -52,10 +52,10 @@ export default function DashboardLayout({
       {/* Top header */}
       <header className="bg-navy-800 text-white">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/dashboard" className="font-serif text-lg font-semibold tracking-wide">
+          <a href="https://kigyo-dm.bantex.jp/" className="font-serif text-lg font-semibold tracking-wide">
             <span className="text-gold-400">起業サーチ</span>
             <span className="text-gray-300 text-sm ml-1">DM営業</span>
-          </Link>
+          </a>
           <button className="text-sm text-gray-400 hover:text-white transition-colors">
             ログアウト
           </button>
