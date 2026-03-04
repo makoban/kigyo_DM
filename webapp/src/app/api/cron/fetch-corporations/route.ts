@@ -26,8 +26,8 @@ export async function GET(req: NextRequest) {
   const batchId = batchLog?.id;
 
   try {
-    // Fetch today's diff CSV
-    const today = new Date();
+    // Fetch today's diff CSV (use JST date since NTA publishes in JST)
+    const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
     const { buffer: zipBuffer } = await fetchDiffCSV(today);
     const csvBuffer = await unzipCSV(zipBuffer);
     const allRows = parseCSV(csvBuffer);

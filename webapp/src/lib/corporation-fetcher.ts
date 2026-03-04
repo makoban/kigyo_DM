@@ -88,16 +88,21 @@ export async function fetchDiffCSV(
   const token = tokenMatch[1];
 
   // Extract fileNo for the target date
-  const dateStr = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(date.getDate()).padStart(2, "0")}`;
-  const fileNoMatch = pageHtml.match(
-    new RegExp(`value="(\\d+)"[^>]*>\\s*${dateStr}`)
-  ) ||
-    pageHtml.match(
-      new RegExp(`value="(\\d+)"[^>]*>[^<]*${dateStr}`)
-    );
+  // NTA uses Japanese era (令和X年Y月Z日) + doDownload(fileNo)
+  const reiwaYear = date.getFullYear() - 2018; // 2019 = 令和1年
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const warekiStr = `令和${reiwaYear}年${month}月${day}日`;
+  const dateStr = `${date.getFullYear()}${String(month).padStart(2, "0")}${String(day).padStart(2, "0")}`;
+
+  // Match: 令和X年Y月Z日 ... doDownload(fileNo)
+  const warekiPattern = new RegExp(
+    warekiStr + `[\\s\\S]*?doDownload\\((\\d+)\\)`,
+  );
+  const fileNoMatch = pageHtml.match(warekiPattern);
 
   if (!fileNoMatch) {
-    throw new Error(`No CSV available for date ${dateStr}`);
+    throw new Error(`No CSV available for date ${dateStr} (${warekiStr})`);
   }
   const fileNo = fileNoMatch[1];
 
