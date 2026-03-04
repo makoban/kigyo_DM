@@ -87,7 +87,7 @@ export default function DashboardLayout({
               );
             })}
           </nav>
-          <p className="text-[10px] text-gray-300 text-center mt-4">v1.1.0</p>
+          <p className="text-[10px] text-gray-300 text-center mt-4">v{process.env.NEXT_PUBLIC_APP_VERSION}</p>
         </aside>
 
         {/* Main content */}

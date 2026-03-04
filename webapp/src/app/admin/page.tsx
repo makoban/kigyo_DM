@@ -239,7 +239,7 @@ export default function AdminPage() {
           <h1 style={{ fontSize: "20px", fontWeight: 700, color: "#0d1b2a", margin: 0, fontFamily: "'Noto Serif JP', serif" }}>
             {showSent ? "送付済み一覧" : "投函一覧"}
           </h1>
-          <span style={{ fontSize: "10px", color: "#aaa" }}>v1.1.0</span>
+          <span style={{ fontSize: "10px", color: "#aaa" }}>v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
           <span style={{
             background: showSent ? "#22c55e" : "#c9a84c",
             color: "white",
