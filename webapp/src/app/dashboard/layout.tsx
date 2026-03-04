@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { signOut } from "next-auth/react";
 
 const NAV_ITEMS = [
   { path: "/dashboard", label: "ホーム", icon: "home" },
@@ -56,7 +57,10 @@ export default function DashboardLayout({
             <span className="text-gold-400">起業サーチ</span>
             <span className="text-gray-300 text-sm ml-1">DM営業</span>
           </a>
-          <button className="text-sm text-gray-400 hover:text-white transition-colors">
+          <button
+            onClick={() => signOut({ callbackUrl: "https://kigyo-dm.bantex.jp/" })}
+            className="text-sm text-gray-400 hover:text-white transition-colors"
+          >
             ログアウト
           </button>
         </div>
