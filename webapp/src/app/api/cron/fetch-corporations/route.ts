@@ -26,14 +26,29 @@ export async function GET(req: NextRequest) {
   const batchId = batchLog?.id;
 
   try {
-    // Fetch today's diff CSV (use JST date since NTA publishes in JST)
+    // Fetch diff CSV (use JST date; NTA publishes ~16:00 JST, fallback to previous days)
     const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
-    const { buffer: zipBuffer } = await fetchDiffCSV(today);
+    let fetchDate = today;
+    let zipBuffer: Buffer | null = null;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        const result = await fetchDiffCSV(fetchDate);
+        zipBuffer = result.buffer;
+        break;
+      } catch {
+        // Try previous day
+        fetchDate = new Date(fetchDate);
+        fetchDate.setDate(fetchDate.getDate() - 1);
+      }
+    }
+    if (!zipBuffer) {
+      throw new Error("No CSV available for the last 5 days");
+    }
     const csvBuffer = await unzipCSV(zipBuffer);
     const allRows = parseCSV(csvBuffer);
     const newCompanies = filterNewCompanies(allRows);
 
-    const csvDate = today.toISOString().slice(0, 10);
+    const csvDate = fetchDate.toISOString().slice(0, 10);
 
     // Insert new corporations (upsert on corporate_number)
     let insertedCount = 0;
