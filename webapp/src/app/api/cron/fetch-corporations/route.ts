@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
       user_id: string;
       prefecture: string;
       city: string | null;
-      max_letters_per_month: number;
+      monthly_budget_limit: number;
     }[];
 
     let matchedSubs = 0;
@@ -140,7 +140,8 @@ export async function GET(req: NextRequest) {
         [userId, ["pending", "confirmed", "ready_to_send", "sent"], `${yearMonth}-01`, `${yearMonth}-31`]
       );
 
-      const remaining = sub.max_letters_per_month - currentMonthCount;
+      const maxLetters = Math.floor(sub.monthly_budget_limit / 380);
+      const remaining = maxLetters - currentMonthCount;
       if (remaining <= 0) continue;
 
       // Queue mailings (up to remaining budget)
