@@ -16,7 +16,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 interface QueueItem {
   id: string;
   status: string;
-  scheduled_date: string;
+  change_date: string | null;
   company_name: string;
   city: string;
   street_address: string | null;
@@ -57,12 +57,12 @@ export default async function DashboardPage() {
         [userId, `${yearMonth}-01`, `${yearMonth}-31`]
       ),
       query<QueueItem>(
-        `SELECT mq.id, mq.status, mq.scheduled_date,
-                c.company_name, c.city, c.street_address
+        `SELECT mq.id, mq.status,
+                c.company_name, c.city, c.street_address, c.change_date
          FROM mailing_queue mq
          JOIN corporations c ON c.id = mq.corporation_id
          WHERE mq.user_id = $1
-         ORDER BY mq.scheduled_date DESC, mq.id DESC
+         ORDER BY c.change_date DESC, mq.id DESC
          LIMIT 50`,
         [userId]
       ),
@@ -120,10 +120,12 @@ export default async function DashboardPage() {
               label: item.status,
               color: "bg-gray-100 text-gray-600",
             };
-            const date = new Date(item.scheduled_date).toLocaleDateString(
-              "ja-JP",
-              { month: "short", day: "numeric" }
-            );
+            const date = item.change_date
+              ? new Date(item.change_date).toLocaleDateString("ja-JP", {
+                  month: "short",
+                  day: "numeric",
+                })
+              : "";
             return (
               <Card key={item.id} className="flex items-center gap-3 py-3 px-4">
                 <span
@@ -140,7 +142,11 @@ export default async function DashboardPage() {
                     {item.street_address ? ` ${item.street_address}` : ""}
                   </p>
                 </div>
-                <span className="shrink-0 text-xs text-gray-400">{date}</span>
+                {date && (
+                  <span className="shrink-0 text-xs text-gray-400">
+                    登記 {date}
+                  </span>
+                )}
               </Card>
             );
           })}
