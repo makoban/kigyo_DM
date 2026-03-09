@@ -134,6 +134,15 @@ export async function POST(req: NextRequest) {
       [prefecture, city, areaLabel, shokenData ? JSON.stringify(shokenData) : null, subscriptionId, userId]
     );
 
+    // Cancel pending/confirmed queue items from old area
+    await query(
+      `UPDATE mailing_queue
+          SET status = 'cancelled'
+        WHERE subscription_id = $1
+          AND status IN ('pending', 'confirmed')`,
+      [subscriptionId]
+    );
+
     // Generate shoken JPG immediately
     let shokenJpgUrl: string | null = null;
     if (shokenData) {
