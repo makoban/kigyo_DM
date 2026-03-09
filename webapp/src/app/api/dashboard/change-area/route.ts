@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-helpers";
 import { query, queryOne } from "@/lib/db";
+import { takeScreenshot } from "@/lib/screenshot";
+import { uploadJpg } from "@/lib/r2";
 
 const WORKER_BASE = "https://house-search-proxy.ai-fudosan.workers.dev";
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const RENDER_SECRET = process.env.RENDER_SECRET || "dev";
 
 const PREF_CODES: Record<string, string> = {
   北海道: "01", 青森県: "02", 岩手県: "03", 宮城県: "04", 秋田県: "05",
@@ -130,7 +134,21 @@ export async function POST(req: NextRequest) {
       [prefecture, city, areaLabel, shokenData ? JSON.stringify(shokenData) : null, subscriptionId, userId]
     );
 
-    return NextResponse.json({ success: true, areaLabel, hasShoken: !!shokenData });
+    // Generate shoken JPG immediately
+    let shokenJpgUrl: string | null = null;
+    if (shokenData) {
+      try {
+        const url = `${BASE_URL}/render/shoken?subscriptionId=${subscriptionId}&secret=${RENDER_SECRET}`;
+        const buffer = await takeScreenshot(url);
+        const key = `shoken/${subscriptionId}.jpg`;
+        shokenJpgUrl = await uploadJpg(key, buffer);
+        await query("UPDATE subscriptions SET shoken_jpg_url = $1 WHERE id = $2", [shokenJpgUrl, subscriptionId]);
+      } catch (e) {
+        console.error("[change-area] JPG generation failed:", e);
+      }
+    }
+
+    return NextResponse.json({ success: true, areaLabel, hasShoken: !!shokenData, shokenJpgUrl });
   } catch (err) {
     if (err instanceof Error && err.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
