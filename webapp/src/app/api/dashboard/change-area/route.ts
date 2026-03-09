@@ -141,7 +141,8 @@ export async function POST(req: NextRequest) {
         const url = `${BASE_URL}/render/shoken?subscriptionId=${subscriptionId}&secret=${RENDER_SECRET}`;
         const buffer = await takeScreenshot(url);
         const key = `shoken/${subscriptionId}.jpg`;
-        shokenJpgUrl = await uploadJpg(key, buffer);
+        const baseUrl = await uploadJpg(key, buffer);
+        shokenJpgUrl = `${baseUrl}?v=${Date.now()}`;
         await query("UPDATE subscriptions SET shoken_jpg_url = $1 WHERE id = $2", [shokenJpgUrl, subscriptionId]);
       } catch (e) {
         console.error("[change-area] JPG generation failed:", e);
