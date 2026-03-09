@@ -1,10 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardTitle } from "@/components/ui/card";
 import type { Profile, Subscription } from "@/lib/types";
+import {
+  buildAllLocations,
+  searchLocations,
+  type AreaLocation,
+} from "@/lib/area-data";
+
+const allLocations = buildAllLocations();
 
 const PLANS = [
   { id: "start", label: "スタート", amount: 3800, letters: 10, desc: "地方・お試し" },
@@ -19,6 +26,17 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [changingPlan, setChangingPlan] = useState(false);
+
+  // Area edit states
+  const [editingArea, setEditingArea] = useState(false);
+  const [areaQuery, setAreaQuery] = useState("");
+  const [areaSuggestions, setAreaSuggestions] = useState<AreaLocation[]>([]);
+  const [areaDropdownOpen, setAreaDropdownOpen] = useState(false);
+  const [areaActiveIdx, setAreaActiveIdx] = useState(-1);
+  const [selectedArea, setSelectedArea] = useState<AreaLocation | null>(null);
+  const [changingArea, setChangingArea] = useState(false);
+  const areaInputRef = useRef<HTMLInputElement>(null);
+  const areaSuggestRef = useRef<HTMLDivElement>(null);
 
   // Form states
   const [companyName, setCompanyName] = useState("");
@@ -128,6 +146,100 @@ export default function SettingsPage() {
     }
   };
 
+  const handleAreaSearch = useCallback((q: string) => {
+    setAreaQuery(q);
+    setSelectedArea(null);
+    if (q.trim().length === 0) {
+      setAreaSuggestions([]);
+      setAreaDropdownOpen(false);
+      return;
+    }
+    const results = searchLocations(allLocations, q.trim(), 12);
+    setAreaSuggestions(results);
+    setAreaDropdownOpen(results.length > 0);
+    setAreaActiveIdx(-1);
+  }, []);
+
+  const handleAreaSelect = useCallback((loc: AreaLocation) => {
+    setSelectedArea(loc);
+    setAreaQuery(
+      loc.type === "city"
+        ? loc.display || `${loc.pref} ${loc.name}`
+        : loc.name
+    );
+    setAreaDropdownOpen(false);
+    setAreaSuggestions([]);
+  }, []);
+
+  const handleAreaKeyDown = (e: React.KeyboardEvent) => {
+    if (!areaDropdownOpen || areaSuggestions.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setAreaActiveIdx((prev) => Math.min(prev + 1, areaSuggestions.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setAreaActiveIdx((prev) => Math.max(prev - 1, 0));
+    } else if (e.key === "Enter" && areaActiveIdx >= 0) {
+      e.preventDefault();
+      handleAreaSelect(areaSuggestions[areaActiveIdx]);
+    }
+  };
+
+  // Close area dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (
+        areaSuggestRef.current &&
+        !areaSuggestRef.current.contains(e.target as Node) &&
+        areaInputRef.current &&
+        !areaInputRef.current.contains(e.target as Node)
+      ) {
+        setAreaDropdownOpen(false);
+      }
+    };
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, []);
+
+  const handleChangeArea = async () => {
+    if (!selectedArea || !sub) return;
+    setChangingArea(true);
+    setMessage("");
+    try {
+      const prefecture = selectedArea.pref;
+      const city = selectedArea.type === "city" ? selectedArea.name : null;
+      const areaLabel =
+        selectedArea.type === "city"
+          ? selectedArea.display || `${selectedArea.pref} ${selectedArea.name}`
+          : selectedArea.name;
+
+      const res = await fetch("/api/dashboard/change-area", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prefecture,
+          city,
+          areaLabel,
+          subscriptionId: sub.id,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSub({ ...sub, area_label: data.areaLabel, prefecture, city });
+        setEditingArea(false);
+        setSelectedArea(null);
+        setAreaQuery("");
+        setMessage("エリアと商圏データを更新しました");
+      } else {
+        setMessage(data.error || "エリア変更に失敗しました");
+      }
+    } catch {
+      setMessage("通信エラーが発生しました");
+    }
+    setChangingArea(false);
+    setTimeout(() => setMessage(""), 5000);
+  };
+
   if (!profile) {
     return <div className="py-20 text-center text-gray-400">読み込み中...</div>;
   }
@@ -144,8 +256,102 @@ export default function SettingsPage() {
       {/* Area info */}
       {sub && (
         <Card className="mb-6">
-          <CardTitle>エリア設定</CardTitle>
-          <p className="text-sm text-gray-600 mt-2">{sub.area_label}</p>
+          <div className="flex items-center justify-between">
+            <CardTitle>エリア設定</CardTitle>
+            {!editingArea && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEditingArea(true);
+                  setTimeout(() => areaInputRef.current?.focus(), 100);
+                }}
+              >
+                変更
+              </Button>
+            )}
+          </div>
+
+          {editingArea ? (
+            <div className="mt-3">
+              <div className="relative">
+                <input
+                  ref={areaInputRef}
+                  type="text"
+                  value={areaQuery}
+                  onChange={(e) => handleAreaSearch(e.target.value)}
+                  onKeyDown={handleAreaKeyDown}
+                  onFocus={() => {
+                    if (areaSuggestions.length > 0) setAreaDropdownOpen(true);
+                  }}
+                  placeholder="例: 渋谷区、名古屋市、東京都..."
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gold-400/40"
+                />
+                {areaDropdownOpen && areaSuggestions.length > 0 && (
+                  <div
+                    ref={areaSuggestRef}
+                    className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg border border-gray-200 shadow-lg z-50 max-h-60 overflow-y-auto"
+                  >
+                    {areaSuggestions.map((loc, i) => {
+                      const label =
+                        loc.type === "city"
+                          ? loc.display || loc.name
+                          : `${loc.name} (全域)`;
+                      return (
+                        <button
+                          key={`${loc.pref}-${loc.name}-${i}`}
+                          onClick={() => handleAreaSelect(loc)}
+                          className={`w-full text-left px-4 py-2.5 text-sm border-b border-gray-100 last:border-b-0 ${
+                            i === areaActiveIdx
+                              ? "bg-gold-400/10 text-gold-400"
+                              : "text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {selectedArea && (
+                <p className="text-sm text-navy-800 font-medium mt-2">
+                  {selectedArea.type === "city"
+                    ? selectedArea.display || `${selectedArea.pref} ${selectedArea.name}`
+                    : selectedArea.name}
+                </p>
+              )}
+
+              <div className="flex gap-2 mt-3">
+                <Button
+                  onClick={handleChangeArea}
+                  disabled={!selectedArea}
+                  loading={changingArea}
+                  size="sm"
+                >
+                  {changingArea ? "商圏データ生成中..." : "エリア変更"}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setEditingArea(false);
+                    setSelectedArea(null);
+                    setAreaQuery("");
+                  }}
+                >
+                  キャンセル
+                </Button>
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                エリアを変更すると商圏レポートが自動的に再生成されます
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-600 mt-2">{sub.area_label}</p>
+          )}
+
           <div className="flex items-center gap-2 mt-3">
             <span
               className={`inline-block px-2 py-0.5 rounded-full text-xs ${
