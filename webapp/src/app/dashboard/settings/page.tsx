@@ -225,7 +225,13 @@ export default function SettingsPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setSub({ ...sub, area_label: data.areaLabel, prefecture, city });
+        setSub({
+          ...sub,
+          area_label: data.areaLabel,
+          prefecture,
+          city,
+          shoken_jpg_url: data.shokenJpgUrl || null,
+        });
         setEditingArea(false);
         setSelectedArea(null);
         setAreaQuery("");
