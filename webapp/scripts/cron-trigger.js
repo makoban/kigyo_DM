@@ -13,6 +13,7 @@ const endpoints = [
   "/api/cron/fetch-corporations",
   "/api/cron/generate-jpgs",
   "/api/cron/monthly-billing",
+  "/api/cron/lock-queue",
 ];
 
 async function trigger() {
