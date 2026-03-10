@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { auth } from "@/lib/auth";
 import { queryOne, query } from "@/lib/db";
 import type { MonthlyUsage } from "@/lib/types";
+import { TopUpButton } from "@/components/top-up-button";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   pending: { label: "未請求", color: "bg-gray-100 text-gray-600" },
@@ -18,8 +19,8 @@ export default async function BillingPage() {
   const userId = session.user.id;
 
   const [profile, usagesResult] = await Promise.all([
-    queryOne<{ balance: number }>(
-      "SELECT balance FROM profiles WHERE id = $1",
+    queryOne<{ balance: number; plan_amount: number }>(
+      "SELECT balance, plan_amount FROM profiles WHERE id = $1",
       [userId]
     ),
     query<MonthlyUsage>(
@@ -47,6 +48,7 @@ export default async function BillingPage() {
           <p className="text-sm text-gray-500 mt-1">
             {Math.floor(balance / 380)}通分
           </p>
+          <TopUpButton planAmount={profile?.plan_amount ?? 7600} />
         </div>
       </Card>
 
