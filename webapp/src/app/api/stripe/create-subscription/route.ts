@@ -2,54 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { stripe, PLANS } from "@/lib/stripe";
 import { requireAuth } from "@/lib/auth-helpers";
 import { queryOne, query } from "@/lib/db";
-import Stripe from "stripe";
 
-// Product/Price はテストモードで事前作成、または動的に取得
-async function getOrCreatePrice(amount: number): Promise<string> {
-  const plan = PLANS.find((p) => p.amount === amount);
-  if (!plan) throw new Error("Invalid plan amount");
-
-  // 既存のPrice を検索
-  const prices = await stripe.prices.list({
-    lookup_keys: [`dm_plan_${plan.id}`],
-    limit: 1,
-  });
-
-  if (prices.data.length > 0) {
-    return prices.data[0].id;
-  }
-
-  // Product を取得 or 作成
-  let product: Stripe.Product;
-  const products = await stripe.products.list({
-    limit: 100,
-  });
-  const existing = products.data.find(
-    (p) => p.metadata?.service === "kigyo-dm"
-  );
-
-  if (existing) {
-    product = existing;
-  } else {
-    product = await stripe.products.create({
-      name: "起業サーチDM 月額プリペイド",
-      metadata: { service: "kigyo-dm" },
-    });
-  }
-
-  // Price を作成
-  const price = await stripe.prices.create({
-    product: product.id,
-    unit_amount: amount,
-    currency: "jpy",
-    recurring: { interval: "month" },
-    lookup_key: `dm_plan_${plan.id}`,
-    metadata: { plan_id: plan.id, letters: String(plan.letters) },
-  });
-
-  return price.id;
-}
-
+/**
+ * Stripe SDK v20 / API 2026-02-25.clover では invoice.payment_intent が廃止されたため、
+ * 初回決済は PaymentIntent を直接作成し、決済完了後に Subscription を作成するフローに変更。
+ *
+ * Flow:
+ *   1. POST /api/stripe/create-subscription → PaymentIntent (client_secret) を返す
+ *   2. フロントで Stripe Elements で決済確定
+ *   3. POST /api/stripe/complete-setup → 保存されたカードで Subscription 作成
+ */
 export async function POST(req: NextRequest) {
   try {
     let userId: string;
@@ -71,7 +33,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Get Stripe customer ID (profile may not exist for Google OAuth users)
-    const profile = await queryOne<{ stripe_customer_id: string | null; email: string | null }>(
+    const profile = await queryOne<{
+      stripe_customer_id: string | null;
+      email: string | null;
+    }>(
       "SELECT stripe_customer_id, email FROM profiles WHERE id = $1",
       [userId]
     );
@@ -79,7 +44,6 @@ export async function POST(req: NextRequest) {
     let customerId = profile?.stripe_customer_id;
 
     if (!customerId) {
-      // Create Stripe customer and upsert profile row so subsequent calls succeed
       const customer = await stripe.customers.create({
         email: profile?.email || undefined,
         metadata: { user_id: userId },
@@ -106,47 +70,43 @@ export async function POST(req: NextRequest) {
       await stripe.subscriptions.cancel(sub.id);
     }
 
-    const priceId = await getOrCreatePrice(planAmount);
-
-    // Create Subscription (初回は即時課金)
-    const subscription = await stripe.subscriptions.create({
+    // Create PaymentIntent directly for initial charge
+    // setup_future_usage saves the card for subsequent subscription billing
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: planAmount,
+      currency: "jpy",
       customer: customerId,
-      items: [{ price: priceId }],
-      payment_behavior: "default_incomplete",
-      payment_settings: {
-        save_default_payment_method: "on_subscription",
-      },
+      setup_future_usage: "off_session",
       metadata: {
         user_id: userId,
         plan_id: plan.id,
+        plan_amount: String(planAmount),
+        purpose: "initial_charge",
       },
-      expand: ["latest_invoice.payment_intent"],
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const invoice = subscription.latest_invoice as any;
-    const paymentIntent = invoice?.payment_intent as Stripe.PaymentIntent | undefined;
-
-    if (!paymentIntent?.client_secret) {
+    if (!paymentIntent.client_secret) {
+      console.error("[create-subscription] No client_secret from PaymentIntent");
       return NextResponse.json(
         { error: "決済の初期化に失敗しました。再度お試しください。" },
         { status: 500 }
       );
     }
 
-    // Save subscription ID and plan amount to profile
+    // Save plan amount to profile (subscription will be created after payment completes)
     await query(
-      "UPDATE profiles SET stripe_subscription_id = $1, plan_amount = $2 WHERE id = $3",
-      [subscription.id, planAmount, userId]
+      "UPDATE profiles SET plan_amount = $1 WHERE id = $2",
+      [planAmount, userId]
     );
 
     return NextResponse.json({
-      subscriptionId: subscription.id,
       clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
     });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Subscription creation failed";
+    console.error("[create-subscription] Error:", message, error);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -111,17 +111,7 @@ export default function PaymentPage() {
       const amount = state.planAmount || 7600;
       setPlanAmount(amount);
 
-      // First create SetupIntent to register card (needed for Subscription)
-      const setupRes = await fetch("/api/stripe/setup-intent", {
-        method: "POST",
-      });
-      const setupData = await setupRes.json();
-      if (setupData.error) {
-        setError(setupData.error);
-        return;
-      }
-
-      // Then create Subscription
+      // Create PaymentIntent for initial charge (card is saved via setup_future_usage)
       const res = await fetch("/api/stripe/create-subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -131,7 +121,7 @@ export default function PaymentPage() {
       if (data.clientSecret) {
         setClientSecret(data.clientSecret);
       } else {
-        setError(data.error || "サブスクリプション作成に失敗しました");
+        setError(data.error || "決済の初期化に失敗しました");
       }
     };
     init();
