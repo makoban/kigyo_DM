@@ -12,6 +12,7 @@ if (!CRON_SECRET) {
 const endpoints = [
   "/api/cron/fetch-corporations",
   "/api/cron/generate-jpgs",
+  "/api/cron/monthly-billing",
 ];
 
 async function trigger() {

@@ -354,6 +354,73 @@ DB変更（002_prepaid_billing.sql 新規作成）:
 
 ---
 
+### 2026-03-02 ── セッション10：$GSC_TAGプレースホルダー表示バグ修正
+
+**問題:**
+- LP（kigyo-dm.bantex.jp）のページ上部に `$GSC_TAG` というテキストが表示されていた
+- セッション9（SEO基盤整備）でGoogle Search Console認証タグ用のプレースホルダーとして `index.html` の `<head>` 内に追加されたが、実際のmetaタグに置換されずにそのまま残っていた
+- ブラウザが `<head>` 内の不明なテキストノードをページ上部に描画
+
+**修正:**
+- `index.html` 6行目の `$GSC_TAG` を削除
+- GSC所有権確認はHTMLファイル方式（`google20ba1904721c962a.html`）で既に完了済みのため、metaタグは不要
+
+**教訓:** テンプレート変数（`$GSC_TAG` 等）をHTMLに直接入れる場合は、CI/CDで置換する仕組みがない限り使わない。GitHub Pagesは静的配信のためビルド時変数置換がない。
+
+---
+
+### 2026-03-10 ── セッション11：自動処理稼働確認 + ダッシュボード改修 + エリア変更機能
+
+**1. Cronジョブ稼働確認:**
+- Render Cron Job `kigyo-dm-fetch-corporations` (crn-d6kmeih5pdvs7384m3vg) は既に稼働中（batch_logs 10件以上）
+- スケジュール: `0 8 * * *`（毎日17:00 JST）
+- 実行内容: `cron-trigger.js` → fetch-corporations + generate-jpgs
+- 環境変数: WEBAPP_URL, CRON_SECRET (`kigyo-dm-cron-secret-2026`)
+- **問題**: マッチング0件が続いていた → サブスクのエリアが「名古屋市千種区」限定で対象が少なすぎた
+
+**2. サブスクリプション変更:**
+- エリアを「名古屋市千種区」→「愛知県 名古屋市」に変更
+- fetch-corporations再実行で16件の新設法人がキューに追加
+
+**3. ダッシュボード改修（dashboard/page.tsx）:**
+- `sent`のみ表示 → **全ステータス表示**に変更（pending/confirmed/ready_to_send/sent/cancelled）
+- **投函リスト一覧**を追加（会社名・住所・ステータスバッジ・日付）
+- 日付を投函予定日(scheduled_date) → **登記日(change_date)**に変更
+- サマリーカード: 「発送待ち」「投函済み」「残高」「今月の通数」
+
+**4. エリア変更機能（新規）:**
+- **API**: `/api/dashboard/change-area` 新規作成
+- **設定画面**: サジェスト付きエリア検索UIを追加（area-dataライブラリを再利用）
+- エリア変更時の処理:
+  1. 商圏データ(e-Stat + Gemini)を自動再生成
+  2. 商圏レポートJPG(screenshot → R2)を即時再生成
+  3. JPG URLにキャッシュバスト(`?v=timestamp`)を付与（R2同一パス上書きのため）
+  4. 旧エリアのpending/confirmedキューを自動キャンセル
+  5. フロントエンドのstateにshokenJpgUrlを即時反映
+
+**5. 自動処理フロー（確定版）:**
+```
+fetch-corporations (毎日17:00 JST)
+  → 国税庁CSV取得（最大5日フォールバック）
+  → 新設法人をcorporationsテーブルにupsert
+  → activeなsubscriptionsとマッチング（prefecture + city）
+  → mailing_queueにpendingとして追加（翌日予定）
+generate-jpgs (fetch-corporationsと同時)
+  → shoken_jpg_url未生成のsubscription → screenshot → R2
+  → greeting_jpg_url未生成のmailing_queue → screenshot → R2
+lock-queue (毎日16:30 JST)
+  → 翌日分のpending → confirmed
+monthly-billing (毎月1日)
+  → sent分の残高減算
+```
+
+**新規ファイル:**
+- `webapp/src/app/api/dashboard/change-area/route.ts` — エリア変更API
+- `webapp/scripts/regen-shoken.js` — 商圏データ手動再生成スクリプト
+- `webapp/scripts/test-area-change.js` — エリア変更フルフローテスト
+
+---
+
 **今後の課題・TODO（未着手）:**
 - [ ] お問い合わせフォームの実装（現在は mailto リンクのみ）
 - [ ] 実際のお客様の声への差し替え（現在はサンプルテキスト）
