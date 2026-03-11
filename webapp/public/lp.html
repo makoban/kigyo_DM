@@ -498,7 +498,7 @@
   </nav>
 
   <!-- === ヒーロー === -->
-  <section class="hero">
+  <section id="hero" class="hero">
     <div class="hero-grid"></div>
     <div class="hero-content">
       <div class="hero-badge">特に税理士、社労士、コンサル事業者様に全自動営業システム</div>
@@ -601,7 +601,7 @@
   </section>
 
   <!-- === お悩み === -->
-  <section class="pain section fade-in">
+  <section id="pain" class="pain section fade-in">
     <div class="container text-center">
       <span class="section-label">Problem</span>
       <h2 class="section-title">こんなお悩み、ありませんか？</h2>
@@ -618,7 +618,7 @@
   </section>
 
   <!-- === 解決策 === -->
-  <section class="solution section fade-in">
+  <section id="solution" class="solution section fade-in">
     <div class="container text-center">
       <span class="section-label">Solution</span>
       <h2 class="section-title">そのお悩み、<em>すべて解決</em>できます。</h2>
@@ -784,7 +784,7 @@
   </section>
 
   <!-- === なぜ選ばれるか === -->
-  <section class="why section fade-in">
+  <section id="why" class="why section fade-in">
     <div class="container text-center">
       <span class="section-label">Why it works</span>
       <h2 class="section-title">なぜ、<em>このサービスが選ばれる</em>のか</h2>
@@ -825,7 +825,7 @@
   </section>
 
   <!-- === 比較 === -->
-  <section class="compare section fade-in">
+  <section id="compare" class="compare section fade-in">
     <div class="container text-center">
       <span class="section-label">Compare</span>
       <h2 class="section-title">他の営業手段と<em>くらべてみてください</em></h2>
@@ -845,7 +845,7 @@
   </section>
 
   <!-- === お客様の声 === -->
-  <section class="voice section fade-in">
+  <section id="voice" class="voice section fade-in">
     <div class="container text-center">
       <span class="section-label">Voice</span>
       <h2 class="section-title">ご利用いただいた方の<em>声</em></h2>
@@ -1458,6 +1458,27 @@
       msgEl.innerHTML='月額上限 <em>&yen;'+budget.toLocaleString()+'</em> の場合：月 <em>'+maxLetters+'通</em> まで（&yen;'+actualCost.toLocaleString()+'）。予算を超えることはありません。';
     }
   }
+  </script>
+  <script>
+  (function(){
+    var sid = localStorage.getItem('_bx_sid');
+    if (!sid) { sid = crypto.randomUUID(); localStorage.setItem('_bx_sid', sid); }
+    var dt = window.innerWidth < 768 ? 'mobile' : 'desktop';
+    var ref = document.referrer || '';
+    var sent = {};
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (!entry.isIntersecting) return;
+        var secId = entry.target.getAttribute('data-section') || entry.target.id;
+        if (!secId || sent[secId]) return;
+        sent[secId] = true;
+        var blob = new Blob([JSON.stringify({ session_id: sid, service_key: 'jigyo', section_id: secId, device_type: dt, referrer: ref })], {type: 'application/json'});
+        navigator.sendBeacon('https://bantex-ads-dashboard.onrender.com/api/track/scroll', blob);
+      });
+    }, { threshold: 0.3 });
+
+    document.querySelectorAll('section[id]').forEach(function(el) { observer.observe(el); });
+  })();
   </script>
 </body>
 </html>
