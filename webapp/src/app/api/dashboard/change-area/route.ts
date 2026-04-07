@@ -146,10 +146,10 @@ export async function POST(req: NextRequest) {
     // Match existing corporations in DB against new area and queue them
     let queuedCount = 0;
     try {
-      // Find recent corporations (last 30 days) matching the new area
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const sinceDate = thirtyDaysAgo.toISOString().slice(0, 10);
+      // Find corporations from last 1 day matching the new area
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const sinceDate = yesterday.toISOString().slice(0, 10);
 
       const matchQuery = city
         ? "SELECT id FROM corporations WHERE prefecture = $1 AND city LIKE $2 AND csv_date >= $3"

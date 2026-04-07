@@ -139,6 +139,7 @@ export default async function DashboardPage() {
             };
             const date = item.change_date
               ? new Date(item.change_date).toLocaleDateString("ja-JP", {
+                  year: "numeric",
                   month: "short",
                   day: "numeric",
                 })
