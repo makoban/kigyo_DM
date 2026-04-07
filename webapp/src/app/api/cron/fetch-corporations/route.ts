@@ -131,13 +131,15 @@ export async function GET(req: NextRequest) {
 
       // Check monthly budget
       const yearMonth = new Date().toISOString().slice(0, 7);
+      const [ym, mm] = yearMonth.split("-").map(Number);
+      const lastDayOfMonth = new Date(ym, mm, 0).getDate();
       const currentMonthCount = await queryCount(
         `SELECT COUNT(*) FROM mailing_queue
          WHERE user_id = $1
            AND status = ANY($2)
            AND scheduled_date >= $3
            AND scheduled_date <= $4`,
-        [userId, ["pending", "confirmed", "ready_to_send", "sent"], `${yearMonth}-01`, `${yearMonth}-31`]
+        [userId, ["pending", "confirmed", "ready_to_send", "sent"], `${yearMonth}-01`, `${yearMonth}-${String(lastDayOfMonth).padStart(2, "0")}`]
       );
 
       const maxLetters = Math.floor(sub.monthly_budget_limit / 380);

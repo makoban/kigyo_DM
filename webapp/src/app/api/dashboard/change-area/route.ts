@@ -143,6 +143,46 @@ export async function POST(req: NextRequest) {
       [subscriptionId]
     );
 
+    // Match existing corporations in DB against new area and queue them
+    let queuedCount = 0;
+    try {
+      // Find recent corporations (last 30 days) matching the new area
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const sinceDate = thirtyDaysAgo.toISOString().slice(0, 10);
+
+      const matchQuery = city
+        ? "SELECT id FROM corporations WHERE prefecture = $1 AND city LIKE $2 AND csv_date >= $3"
+        : "SELECT id FROM corporations WHERE prefecture = $1 AND csv_date >= $2";
+      const matchParams = city
+        ? [prefecture, `%${city}%`, sinceDate]
+        : [prefecture, sinceDate];
+
+      const matchResult = await query<{ id: number }>(matchQuery, matchParams);
+
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const scheduledDate = tomorrow.toISOString().slice(0, 10);
+
+      for (const corp of matchResult.rows) {
+        // Skip duplicates (same user + corporation)
+        const existing = await queryOne(
+          "SELECT 1 FROM mailing_queue WHERE user_id = $1 AND corporation_id = $2",
+          [userId, corp.id]
+        );
+        if (existing) continue;
+
+        await query(
+          `INSERT INTO mailing_queue (subscription_id, user_id, corporation_id, status, scheduled_date, unit_price)
+           VALUES ($1, $2, $3, 'pending', $4, 380)`,
+          [subscriptionId, userId, corp.id, scheduledDate]
+        );
+        queuedCount++;
+      }
+    } catch (e) {
+      console.error("[change-area] corporation matching failed:", e);
+    }
+
     // Generate shoken JPG immediately
     let shokenJpgUrl: string | null = null;
     if (shokenData) {
@@ -158,7 +198,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, areaLabel, hasShoken: !!shokenData, shokenJpgUrl });
+    return NextResponse.json({ success: true, areaLabel, hasShoken: !!shokenData, shokenJpgUrl, queuedCount });
   } catch (err) {
     if (err instanceof Error && err.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

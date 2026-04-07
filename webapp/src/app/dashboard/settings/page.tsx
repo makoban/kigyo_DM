@@ -235,7 +235,10 @@ export default function SettingsPage() {
         setEditingArea(false);
         setSelectedArea(null);
         setAreaQuery("");
-        setMessage("エリアと商圏データを更新しました");
+        const queueMsg = data.queuedCount > 0
+          ? `（${data.queuedCount}件の新設法人をキューに追加しました）`
+          : "";
+        setMessage(`エリアと商圏データを更新しました${queueMsg}`);
       } else {
         setMessage(data.error || "エリア変更に失敗しました");
       }
