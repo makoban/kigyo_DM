@@ -165,9 +165,9 @@ export async function POST(req: NextRequest) {
       const scheduledDate = tomorrow.toISOString().slice(0, 10);
 
       for (const corp of matchResult.rows) {
-        // Skip duplicates (same user + corporation)
+        // Skip duplicates — only if there's an active (non-cancelled) queue item
         const existing = await queryOne(
-          "SELECT 1 FROM mailing_queue WHERE user_id = $1 AND corporation_id = $2",
+          "SELECT 1 FROM mailing_queue WHERE user_id = $1 AND corporation_id = $2 AND status != 'cancelled'",
           [userId, corp.id]
         );
         if (existing) continue;
