@@ -13,3 +13,6 @@ Thumbs.db
 
 # Node (webapp has its own .gitignore too)
 node_modules/
+
+# Playwright MCP artifacts
+.playwright-mcp/

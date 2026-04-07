@@ -46,3 +46,8 @@ next-env.d.ts
 
 # supabase temp
 /supabase/.temp/
+
+# scripts with secrets
+/scripts/test-stripe-flow.js
+/scripts/seed-test.js
+/scripts/setup-permanent.js

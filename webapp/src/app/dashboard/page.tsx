@@ -34,8 +34,8 @@ export default async function DashboardPage() {
 
   const [profile, sub, totalAll, totalSent, totalPending, totalMonth, recentItems] =
     await Promise.all([
-      queryOne<{ balance: number }>(
-        "SELECT balance FROM profiles WHERE id = $1",
+      queryOne<{ balance: number; plan_type: string }>(
+        "SELECT balance, plan_type FROM profiles WHERE id = $1",
         [userId]
       ),
       queryOne<{ area_label: string }>(
@@ -73,6 +73,7 @@ export default async function DashboardPage() {
   const balance = profile?.balance ?? 0;
   const remainingLetters = Math.floor(balance / UNIT_PRICE);
   const areaLabel = sub?.area_label ?? "";
+  const isFreeForever = profile?.plan_type === "free_forever";
   const items = recentItems.rows;
 
   return (
@@ -80,6 +81,11 @@ export default async function DashboardPage() {
       <h1 className="font-serif text-2xl font-semibold text-navy-800 mb-1">
         ダッシュボード
       </h1>
+      {isFreeForever && (
+        <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-gold-400/15 text-gold-400 mb-2">
+          永久無料プラン
+        </span>
+      )}
       {areaLabel && (
         <p className="text-sm text-gold-400 mb-6">{areaLabel}</p>
       )}
@@ -94,12 +100,21 @@ export default async function DashboardPage() {
           <p className="text-xs text-gray-500 mt-1">投函済み</p>
         </Card>
         <Card className="text-center py-4 col-span-2 md:col-span-1">
-          <p className="text-2xl font-bold text-gold-400">
-            {remainingLetters}通
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            残高 &yen;{balance.toLocaleString()}
-          </p>
+          {isFreeForever ? (
+            <>
+              <p className="text-2xl font-bold text-gold-400">無料</p>
+              <p className="text-xs text-gray-500 mt-1">永久無料プラン</p>
+            </>
+          ) : (
+            <>
+              <p className="text-2xl font-bold text-gold-400">
+                {remainingLetters}通
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                残高 &yen;{balance.toLocaleString()}
+              </p>
+            </>
+          )}
         </Card>
         <Card className="text-center py-4">
           <p className="text-2xl font-bold text-navy-800">{totalMonth}</p>

@@ -19,8 +19,8 @@ export default async function BillingPage() {
   const userId = session.user.id;
 
   const [profile, usagesResult] = await Promise.all([
-    queryOne<{ balance: number; plan_amount: number }>(
-      "SELECT balance, plan_amount FROM profiles WHERE id = $1",
+    queryOne<{ balance: number; plan_amount: number; plan_type: string }>(
+      "SELECT balance, plan_amount, plan_type FROM profiles WHERE id = $1",
       [userId]
     ),
     query<MonthlyUsage>(
@@ -41,14 +41,27 @@ export default async function BillingPage() {
       {/* Balance card */}
       <Card className="mb-6 bg-navy-800/5 border-navy-700/10">
         <div className="text-center">
-          <p className="text-sm text-gray-500">現在の残高</p>
-          <p className="text-3xl font-bold text-gold-400">
-            &yen;{balance.toLocaleString()}
-          </p>
-          <p className="text-sm text-gray-500 mt-1">
-            {Math.floor(balance / 380)}通分
-          </p>
-          <TopUpButton planAmount={profile?.plan_amount ?? 7600} />
+          {profile?.plan_type === "free_forever" ? (
+            <>
+              <span className="inline-block px-3 py-1 rounded-full text-sm font-semibold bg-gold-400/15 text-gold-400">
+                永久無料プラン
+              </span>
+              <p className="text-sm text-gray-500 mt-2">
+                課金はありません
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-gray-500">現在の残高</p>
+              <p className="text-3xl font-bold text-gold-400">
+                &yen;{balance.toLocaleString()}
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                {Math.floor(balance / 380)}通分
+              </p>
+              <TopUpButton planAmount={profile?.plan_amount ?? 7600} />
+            </>
+          )}
         </div>
       </Card>
 

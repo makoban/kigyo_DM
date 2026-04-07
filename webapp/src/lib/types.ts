@@ -15,6 +15,7 @@ export interface Profile {
   stripe_subscription_id: string | null;
   balance: number;
   plan_amount: number;
+  plan_type: string;
   created_at: string;
   updated_at: string;
 }

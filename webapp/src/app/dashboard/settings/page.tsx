@@ -378,43 +378,56 @@ export default function SettingsPage() {
       {/* Plan */}
       <Card className="mb-6">
         <CardTitle>プラン</CardTitle>
-        <p className="text-sm text-gray-500 mt-1">
-          現在:{" "}
-          <span className="font-semibold text-navy-800">
-            {currentPlan.label}
-          </span>
-          （&yen;{currentPlan.amount.toLocaleString()}/月 ・{" "}
-          {currentPlan.letters}通）
-        </p>
-        <p className="text-sm text-gray-500 mt-1">
-          残高:{" "}
-          <span className="font-semibold text-gold-400">
-            &yen;{profile.balance.toLocaleString()}
-          </span>
-          （{Math.floor(profile.balance / 380)}通分）
-        </p>
-        <div className="grid grid-cols-2 gap-2 mt-4">
-          {PLANS.map((plan) => (
-            <button
-              key={plan.id}
-              onClick={() => handleChangePlan(plan.amount)}
-              disabled={changingPlan || plan.amount === profile.plan_amount}
-              className={`rounded-lg border p-3 text-left text-sm transition-colors ${
-                plan.amount === profile.plan_amount
-                  ? "border-gold-400 bg-gold-400/5"
-                  : "border-gray-200 hover:border-gray-300"
-              } disabled:opacity-50`}
-            >
-              <p className="font-semibold text-navy-800">{plan.label}</p>
-              <p className="text-gray-500 text-xs">
-                &yen;{plan.amount.toLocaleString()}/月 ({plan.letters}通)
-              </p>
-            </button>
-          ))}
-        </div>
-        <p className="text-xs text-gray-400 mt-2">
-          プラン変更は翌月1日から反映されます
-        </p>
+        {profile.plan_type === "free_forever" ? (
+          <div className="mt-2">
+            <span className="inline-block px-3 py-1 rounded-full text-sm font-semibold bg-gold-400/15 text-gold-400">
+              永久無料プラン
+            </span>
+            <p className="text-sm text-gray-500 mt-2">
+              このアカウントはサンプル用の永久無料プランです。すべてのダッシュボード機能をご利用いただけます。
+            </p>
+          </div>
+        ) : (
+          <>
+            <p className="text-sm text-gray-500 mt-1">
+              現在:{" "}
+              <span className="font-semibold text-navy-800">
+                {currentPlan.label}
+              </span>
+              （&yen;{currentPlan.amount.toLocaleString()}/月 ・{" "}
+              {currentPlan.letters}通）
+            </p>
+            <p className="text-sm text-gray-500 mt-1">
+              残高:{" "}
+              <span className="font-semibold text-gold-400">
+                &yen;{profile.balance.toLocaleString()}
+              </span>
+              （{Math.floor(profile.balance / 380)}通分）
+            </p>
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              {PLANS.map((plan) => (
+                <button
+                  key={plan.id}
+                  onClick={() => handleChangePlan(plan.amount)}
+                  disabled={changingPlan || plan.amount === profile.plan_amount}
+                  className={`rounded-lg border p-3 text-left text-sm transition-colors ${
+                    plan.amount === profile.plan_amount
+                      ? "border-gold-400 bg-gold-400/5"
+                      : "border-gray-200 hover:border-gray-300"
+                  } disabled:opacity-50`}
+                >
+                  <p className="font-semibold text-navy-800">{plan.label}</p>
+                  <p className="text-gray-500 text-xs">
+                    &yen;{plan.amount.toLocaleString()}/月 ({plan.letters}通)
+                  </p>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 mt-2">
+              プラン変更は翌月1日から反映されます
+            </p>
+          </>
+        )}
       </Card>
 
       {/* Sender info */}

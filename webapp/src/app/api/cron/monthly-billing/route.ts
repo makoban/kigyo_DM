@@ -40,13 +40,23 @@ export async function GET(req: NextRequest) {
   for (const [userId, items] of userItems) {
     try {
       // 現在の残高を取得
-      const profile = await queryOne<{ balance: number }>(
-        "SELECT balance FROM profiles WHERE id = $1",
+      const profile = await queryOne<{ balance: number; plan_type: string }>(
+        "SELECT balance, plan_type FROM profiles WHERE id = $1",
         [userId]
       );
 
       if (!profile) {
         errors.push(`User ${userId}: profile not found`);
+        continue;
+      }
+
+      // 永久無料ユーザーは精算済みマークのみ（残高減算しない）
+      if (profile.plan_type === "free_forever") {
+        await query(
+          "UPDATE mailing_queue SET balance_deducted = true WHERE id = ANY($1)",
+          [items.ids]
+        );
+        deductedCount += items.ids.length;
         continue;
       }
 
