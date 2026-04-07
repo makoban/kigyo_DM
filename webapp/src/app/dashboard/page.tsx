@@ -23,67 +23,52 @@ interface QueueItem {
 }
 
 export default async function DashboardPage() {
-  let session;
-  try {
-    session = await auth();
-  } catch (e) {
-    return <div className="p-8 text-red-600">Auth error: {e instanceof Error ? e.message + "\n" + e.stack : String(e)}</div>;
-  }
+  const session = await auth();
   if (!session?.user?.id) redirect("/onboarding/signup");
   const userId = session.user.id;
 
   const today = new Date().toISOString().slice(0, 10);
   const yearMonth = today.slice(0, 7);
+  const [y, m] = yearMonth.split("-").map(Number);
+  const lastDay = new Date(y, m, 0).getDate();
 
-  let profile: { balance: number } | null;
-  let sub: { area_label: string } | null;
-  let totalAll: number;
-  let totalSent: number;
-  let totalPending: number;
-  let totalMonth: number;
-  let recentItems: { rows: QueueItem[] };
-
-  try {
-    [profile, sub, totalAll, totalSent, totalPending, totalMonth, recentItems] =
-      await Promise.all([
-        queryOne<{ balance: number }>(
-          "SELECT balance FROM profiles WHERE id = $1",
-          [userId]
-        ),
-        queryOne<{ area_label: string }>(
-          "SELECT area_label FROM subscriptions WHERE user_id = $1 AND status = 'active' LIMIT 1",
-          [userId]
-        ),
-        queryCount(
-          "SELECT COUNT(*) FROM mailing_queue WHERE user_id = $1",
-          [userId]
-        ),
-        queryCount(
-          "SELECT COUNT(*) FROM mailing_queue WHERE user_id = $1 AND status = 'sent'",
-          [userId]
-        ),
-        queryCount(
-          "SELECT COUNT(*) FROM mailing_queue WHERE user_id = $1 AND status IN ('pending','confirmed','ready_to_send')",
-          [userId]
-        ),
-        queryCount(
-          "SELECT COUNT(*) FROM mailing_queue WHERE user_id = $1 AND scheduled_date >= $2 AND scheduled_date <= $3",
-          [userId, `${yearMonth}-01`, `${yearMonth}-31`]
-        ),
-        query<QueueItem>(
-          `SELECT mq.id, mq.status,
-                  c.company_name, c.city, c.street_address, c.change_date
-           FROM mailing_queue mq
-           JOIN corporations c ON c.id = mq.corporation_id
-           WHERE mq.user_id = $1
-           ORDER BY c.change_date DESC, mq.id DESC
-           LIMIT 50`,
-          [userId]
-        ),
-      ]);
-  } catch (e) {
-    return <div className="p-8 text-red-600">DB error: {e instanceof Error ? e.message + "\n" + e.stack : String(e)}</div>;
-  }
+  const [profile, sub, totalAll, totalSent, totalPending, totalMonth, recentItems] =
+    await Promise.all([
+      queryOne<{ balance: number }>(
+        "SELECT balance FROM profiles WHERE id = $1",
+        [userId]
+      ),
+      queryOne<{ area_label: string }>(
+        "SELECT area_label FROM subscriptions WHERE user_id = $1 AND status = 'active' LIMIT 1",
+        [userId]
+      ),
+      queryCount(
+        "SELECT COUNT(*) FROM mailing_queue WHERE user_id = $1",
+        [userId]
+      ),
+      queryCount(
+        "SELECT COUNT(*) FROM mailing_queue WHERE user_id = $1 AND status = 'sent'",
+        [userId]
+      ),
+      queryCount(
+        "SELECT COUNT(*) FROM mailing_queue WHERE user_id = $1 AND status IN ('pending','confirmed','ready_to_send')",
+        [userId]
+      ),
+      queryCount(
+        "SELECT COUNT(*) FROM mailing_queue WHERE user_id = $1 AND scheduled_date >= $2 AND scheduled_date <= $3",
+        [userId, `${yearMonth}-01`, `${yearMonth}-${String(lastDay).padStart(2, "0")}`]
+      ),
+      query<QueueItem>(
+        `SELECT mq.id, mq.status,
+                c.company_name, c.city, c.street_address, c.change_date
+         FROM mailing_queue mq
+         JOIN corporations c ON c.id = mq.corporation_id
+         WHERE mq.user_id = $1
+         ORDER BY c.change_date DESC, mq.id DESC
+         LIMIT 50`,
+        [userId]
+      ),
+    ]);
 
   const balance = profile?.balance ?? 0;
   const remainingLetters = Math.floor(balance / UNIT_PRICE);
