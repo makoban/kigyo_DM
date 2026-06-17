@@ -5,6 +5,12 @@ const SUB_ID = "c9c6a41a-4e2a-4e46-9c8e-1a7d475920a1";
 const PREFECTURE = "愛知県";
 const CITY = "名古屋市";
 const PREF_CODE = "23";
+const DB_URL = process.env.DATABASE_URL;
+
+if (!DB_URL) {
+  console.error("DATABASE_URL is required");
+  process.exit(1);
+}
 
 async function main() {
   // Step 1: e-Stat
@@ -118,8 +124,7 @@ async function main() {
   // Step 3: Save to DB
   const { Pool } = require("pg");
   const pool = new Pool({
-    connectionString:
-      "postgresql://kokotomo_staging_user:MdaXINo3sbdaPy1cPwp7lvnm8O7SLdLq@dpg-d52du3nfte5s73d3ni6g-a.singapore-postgres.render.com/kokotomo_staging",
+    connectionString: DB_URL,
     ssl: { rejectUnauthorized: false },
   });
   pool.on("connect", (c) => c.query("SET search_path TO kigyo_dm, public"));

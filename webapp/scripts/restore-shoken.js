@@ -1,7 +1,12 @@
 // Restore shoken data for banmakodh@gmail.com demo account
 const WORKER_BASE = "https://house-search-proxy.ai-fudosan.workers.dev";
 const SUB_ID = "b5382f74-7ecb-48a7-8606-46e051d7c38a";
-const DB_URL = "postgresql://kokotomo_staging_user:MdaXINo3sbdaPy1cPwp7lvnm8O7SLdLq@dpg-d52du3nfte5s73d3ni6g-a.singapore-postgres.render.com/kokotomo_staging";
+const DB_URL = process.env.DATABASE_URL;
+
+if (!DB_URL) {
+  console.error("DATABASE_URL is required");
+  process.exit(1);
+}
 
 (async () => {
   // 1. e-Stat for Aichi (23)

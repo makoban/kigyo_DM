@@ -3,9 +3,18 @@ import "./globals.css";
 import { SessionProvider } from "@/components/session-provider";
 
 export const metadata: Metadata = {
-  title: "起業サーチDM営業サービス",
-  description:
-    "新設法人を毎日自動検索し、商圏データレポート付きのDMを全自動で発送。士業・専門サービスのための新規開拓ツール。",
+  title: "準備中 | 起業サーチDM営業サービス",
+  description: "起業サーチDM営業サービスは現在準備中です。",
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+      noimageindex: true,
+    },
+  },
 };
 
 export default function RootLayout({

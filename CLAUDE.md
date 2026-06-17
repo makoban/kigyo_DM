@@ -375,7 +375,7 @@ DB変更（002_prepaid_billing.sql 新規作成）:
 - Render Cron Job `kigyo-dm-fetch-corporations` (crn-d6kmeih5pdvs7384m3vg) は既に稼働中（batch_logs 10件以上）
 - スケジュール: `0 8 * * *`（毎日17:00 JST）
 - 実行内容: `cron-trigger.js` → fetch-corporations + generate-jpgs
-- 環境変数: WEBAPP_URL, CRON_SECRET (`kigyo-dm-cron-secret-2026`)
+- 環境変数: WEBAPP_URL, CRON_SECRET（実値は環境変数で管理）
 - **問題**: マッチング0件が続いていた → サブスクのエリアが「名古屋市千種区」限定で対象が少なすぎた
 
 **2. サブスクリプション変更:**

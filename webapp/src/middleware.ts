@@ -1,28 +1,35 @@
 import { NextResponse, NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
-  const sessionToken =
-    req.cookies.get("authjs.session-token") ||
-    req.cookies.get("__Secure-authjs.session-token");
+  const path = req.nextUrl.pathname;
 
-  if (!sessionToken) {
-    const path = req.nextUrl.pathname;
+  if (path === "/api/stripe/webhook") {
+    return NextResponse.json({ received: true, paused: true });
+  }
 
-    if (path.startsWith("/dashboard")) {
-      const url = req.nextUrl.clone();
-      url.pathname = "/onboarding/signup";
-      url.searchParams.set("redirect", path);
-      return NextResponse.redirect(url);
-    }
+  if (path.startsWith("/api/cron/")) {
+    return NextResponse.json({
+      success: true,
+      paused: true,
+      message: "起業サーチDM営業サービスは現在停止中です。",
+    });
+  }
 
-    if (path.startsWith("/admin") && path !== "/admin/login") {
-      const url = req.nextUrl.clone();
-      url.pathname = "/admin/login";
-      return NextResponse.redirect(url);
-    }
+  if (path.startsWith("/api/")) {
+    return NextResponse.json(
+      { error: "起業サーチDM営業サービスは現在停止中です。" },
+      { status: 503 }
+    );
+  }
+
+  if (path !== "/") {
+    const url = req.nextUrl.clone();
+    url.pathname = "/";
+    url.search = "";
+    return NextResponse.redirect(url);
   }
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };

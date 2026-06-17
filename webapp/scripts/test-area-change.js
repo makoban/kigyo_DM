@@ -3,8 +3,13 @@
 
 const WORKER_BASE = "https://house-search-proxy.ai-fudosan.workers.dev";
 const SUB_ID = "c9c6a41a-4e2a-4e46-9c8e-1a7d475920a1";
-const DB_URL =
-  "postgresql://kokotomo_staging_user:MdaXINo3sbdaPy1cPwp7lvnm8O7SLdLq@dpg-d52du3nfte5s73d3ni6g-a.singapore-postgres.render.com/kokotomo_staging";
+const DB_URL = process.env.DATABASE_URL;
+const CRON_SECRET = process.env.CRON_SECRET;
+
+if (!DB_URL || !CRON_SECRET) {
+  console.error("DATABASE_URL and CRON_SECRET are required");
+  process.exit(1);
+}
 
 async function main() {
   const { Pool } = require("pg");
@@ -52,7 +57,7 @@ async function main() {
   // Step 3: Trigger generate-jpgs
   console.log("Step 3: Triggering generate-jpgs cron...");
   const cronRes = await fetch("https://kigyo-dm-webapp.onrender.com/api/cron/generate-jpgs", {
-    headers: { Authorization: "Bearer kigyo-dm-cron-secret-2026" },
+    headers: { Authorization: `Bearer ${CRON_SECRET}` },
   });
   const cronData = await cronRes.json();
   console.log("  Result:", JSON.stringify(cronData));
@@ -102,7 +107,7 @@ async function main() {
   );
   // Regenerate JPG
   const cronRes2 = await fetch("https://kigyo-dm-webapp.onrender.com/api/cron/generate-jpgs", {
-    headers: { Authorization: "Bearer kigyo-dm-cron-secret-2026" },
+    headers: { Authorization: `Bearer ${CRON_SECRET}` },
   });
   const cronData2 = await cronRes2.json();
   console.log("  JPG regen:", JSON.stringify(cronData2));

@@ -4,7 +4,12 @@
 const { Pool } = require("pg");
 
 const WORKER_BASE = "https://house-search-proxy.ai-fudosan.workers.dev";
-const DB_URL = process.env.DATABASE_URL || "postgresql://kokotomo_staging_user:MdaXINo3sbdaPy1cPwp7lvnm8O7SLdLq@dpg-d52du3nfte5s73d3ni6g-a.singapore-postgres.render.com/kokotomo_staging";
+const DB_URL = process.env.DATABASE_URL;
+
+if (!DB_URL) {
+  console.error("DATABASE_URL is required");
+  process.exit(1);
+}
 
 const PREF_CODES = {
   "北海道":"01","青森県":"02","岩手県":"03","宮城県":"04","秋田県":"05",
